@@ -23,3 +23,7 @@ npm i
 1. dev : npm run dev / npm start
 2. production build : npm run build
 
+### 4. For Cloning the Repo
+- To Clone the repo 
+- git clone https://github.com/PCD-Consultancy-Services/Frontend.git
+
