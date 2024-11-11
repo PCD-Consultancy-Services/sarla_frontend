@@ -22,13 +22,15 @@ To run this project, you need Node.js and npm. Follow these steps:
 - To Clone the repo 
 - git clone https://github.com/PCD-Consultancy-Services/sarla_frontend.git
 
- ### 3. After installing the node js hit this command to intsall all the necessary packages to run the project . 
+### 3. After installing the node js hit this command to intsall all the necessary packages to run the project . 
   ```bash
   npm install
+  ```
 
- ### 4. To Start the Dev Server hit this command :
+### 4. To Start the Dev Server hit this command :
   ```bash
   npm start
+  ```
 
 
 ### 5. Configure Environment Variables
