@@ -1,0 +1,35 @@
+/* custom css classes */
+
+.no-outline{
+    outline: none !important;
+}
+
+/* .rounded-16{
+    border-radius: 16px;
+} */
+
+.w100{
+    width: 100px !important;
+}
+
+.w125{
+    width: 125px !important;
+}
+
+.w150{
+    width: 150px !important;
+}
+
+.w200{
+    width: 200px !important;
+}
+
+/* global table css */
+
+.MuiDataGrid-cell{
+    border:  none !important;
+}
+
+.MuiDataGrid-columnHeaderTitle{
+    color: var(--primary-color)
+}

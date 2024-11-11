@@ -1,0 +1,226 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Lato', sans-serif;
+}
+
+:root {
+  --sky-bg: #F4F7FE;
+  --primary-color: #328EA3;
+  --secondary-color: #ABC637;
+  --grey-color: #E9E9E9;
+  --start-color: red;
+  --light-purple: #A3AED0;
+  --light-white: #a3aed063;
+}
+
+
+/* bg - setter */
+.bg-custom-primary{
+  background: var(--primary-color);
+}
+
+.sarla-main-logo{
+  width: 100%;
+  padding: 25px 10px 25px 10px;
+}
+
+.all-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.label {
+  color: var(--primary-color);
+}
+
+.bg-error{
+  background-color: #FF7171;
+}
+
+/* overall bg - cover */
+.sky-bg {
+  background-color: var(--sky-bg);
+  height: 100vh;
+  width: 100%;
+}
+
+.normal-padding {
+  padding-left: 50px;
+  padding-right: 50px;
+  transition: 0.5s;
+}
+
+.page-padding {
+  padding-left: 300px;
+  padding-right: 30px;
+  transition: 0.5s;
+
+}
+
+.search-inp{
+  /* background-color: var(--sky-bg); */
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  padding: 0px 11px;
+}
+
+
+
+.search-Icon{
+  color: var(--primary-color);
+}
+
+.nav-header-text{
+  font-weight: 600;
+}
+
+.heading{
+  font-size: 2rem;
+  color: var(--primary-color);
+}
+
+.nav-link {
+  transition: 0.5s;
+}
+
+.green-text{
+  color: var(--secondary-color);
+}
+
+.datePicker svg, .select-box svg{
+  color: var(--secondary-color);
+}
+
+
+.silver-text {
+  color: var( --light-purple);
+}
+
+.silver-text::after {
+  content: "/";
+  color: var( --light-purple);
+  margin: 0px 8px;
+}
+
+.sidebar-menu {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.departmentDiv {
+  margin-left: 30px;
+}
+
+.linkClass {
+  width: 60px !important;
+}
+
+.startColor {
+  color: var(--start-color);
+}
+
+.formLabel {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.formInput {
+  margin-top: 15px !important;
+}
+
+.formInput #demo-simple-select {
+  padding: 15.5px !important;
+}
+
+
+.linkBtn {
+  text-decoration: none;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 12px 60px;
+  border-radius: 15px;
+}
+
+.deleteBtn {
+  background-color: var(--primary-color) !important;
+  padding: 9px 55px !important;
+  border-radius: 15px !important;
+  text-transform: capitalize !important;
+
+}
+
+
+.list-table-Icon{
+  color: #b0b0b0;
+}
+
+.page-list-table-dashoard {
+  margin-top: 25px !important;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px !important;
+}
+
+.table-header-text {
+  color: var(--primary-color);
+  font-weight: 600 !important;
+}
+
+.table-link {
+  margin: 0px 15px;
+}
+
+.star-cal {
+  color: orange;
+}
+
+
+.checkBox-div{
+  display: flex;
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.chekbox-second::before {
+  content: "|";
+  color: var( --light-purple);
+  margin-left: 10px;
+}
+
+.line{
+  margin-top: 30px;
+  width: 100%;
+  border-top: 1px solid var(--light-white);
+}
+.img-section{
+  margin-top: 10px;
+}
+
+.modal-image{
+  width: 100%;
+  height: auto;
+}
+
+.dpImage{
+  cursor: pointer;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+.company-name{
+  color: var(--primary-color);
+  font-weight: bold;
+  cursor: pointer;
+}

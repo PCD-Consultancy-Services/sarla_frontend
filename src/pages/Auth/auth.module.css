@@ -1,0 +1,73 @@
+.imageContainer{
+    background-image: url(../../assets/images/bgcover.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: 102vh;
+    border-radius: 0px 0px 20% 0px;
+}
+
+.innerContent{
+    width: 80%;
+}
+
+.icon, .formHeading {
+    margin-bottom: 15px;
+}
+
+.formHeadingText {
+    margin-bottom: 8px;
+    color: var(--primary-color);
+}
+
+.formHeadingLabel {
+    color: var(--light-purple);
+}
+
+.linkDiv{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.label {
+    color: var(--primary-color);
+}
+
+.forgetLink a {
+    text-decoration: none;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.authBtn{
+    width: 100% !important;
+}
+
+.authLogo{
+    padding: 20px 0px 0px 20px;
+    width: 30%;
+}
+
+/* allcenter */
+.allCenter{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@media screen and (max-width: 767px) {
+    .imageContainer{
+        display: none;
+    }
+
+    .mainGrid{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh !important;
+    }
+
+    .innerContent{
+        width: auto;
+    }
+}
