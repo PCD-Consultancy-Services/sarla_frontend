@@ -26,7 +26,7 @@ To run this project, you need Node.js and npm. Follow these steps:
 
 ### 4. For Cloning the Repo
 - To Clone the repo 
-- git clone https://github.com/PCD-Consultancy-Services/Frontend.git
+- git clone https://github.com/PCD-Consultancy-Services/sarla_frontend.git
 
 ### 5. Configure Environment Variables
 - Before running the project, make sure to add a .env file to the project root. This file should include the following variables to connect to the backend
