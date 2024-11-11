@@ -32,6 +32,6 @@ To run this project, you need Node.js and npm. Follow these steps:
 - Before running the project, make sure to add a .env file to the project root. This file should include the following variables to connect to the backend
 
 for example :
-VITE_API_BASE_URL= your_base_api_url
-VITE_API_VERSION= your_base_api_version
+- VITE_API_BASE_URL= your_base_api_url
+- VITE_API_VERSION= your_base_api_version
 
