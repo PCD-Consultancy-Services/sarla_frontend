@@ -27,7 +27,7 @@ To run this project, you need Node.js and npm. Follow these steps:
   npm install
   ```
 
-### 5. Configure Environment Variables
+### 4. Configure Environment Variables
 - Before running the project, make sure to add a .env file to the project root. This file should include the following variables to connect to the backend
 
 for example :
