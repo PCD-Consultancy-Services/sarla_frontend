@@ -27,16 +27,18 @@ To run this project, you need Node.js and npm. Follow these steps:
   npm install
   ```
 
-### 4. To Start the Dev Server hit this command :
-  ```bash
-  npm start
-  ```
-
-
 ### 5. Configure Environment Variables
 - Before running the project, make sure to add a .env file to the project root. This file should include the following variables to connect to the backend
 
 for example :
 - VITE_API_BASE_URL= backend_url
 - VITE_API_VERSION=/api/v1
+
+
+### 5. To Start the Dev Server ( project ) hit this command :
+  ```bash
+  npm start
+  ```
+
+
 
