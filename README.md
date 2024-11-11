@@ -16,14 +16,10 @@ To run this project, you need Node.js and npm. Follow these steps:
   ```bash
   node -v
 
-### 2. To Clone the repo
-git clone <repository-url>
-cd <repository-folder>
-
-### 3. To install all the packages
+### 2. To install all the packages
 npm i 
 
-### 4. To Start the dev / production server
+### 3. To Start the dev / production server
 1. dev : npm run dev / npm start
 2. production build : npm run build
 
