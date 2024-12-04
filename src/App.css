@@ -224,3 +224,18 @@
   font-weight: bold;
   cursor: pointer;
 }
+
+/* // swal swwetalert2 */
+.swal2-confirm {
+  background-color: var(--primary-color) !important;
+  box-shadow: none !important;
+}
+
+/* loader ui */
+.loader-div{
+  position: relative;
+  top: 40px;
+  border-radius: 12px ;
+  padding: 20px;
+  background: white;
+}

@@ -36,7 +36,7 @@ Font.register({
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 15,
     backgroundColor: "#ffffff",
     fontFamily: "Roboto",
   },
@@ -44,31 +44,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 15,
     borderBottom: "2 solid #328EA3",
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
-  logo: { width: 150, height: 40 },
+  logo: { width: 130, height: 30 },
   title: {
     fontSize: 28,
     fontWeight: 700,
     color: "#328EA3",
   },
   name: {
-    fontSize: 14,
+    fontSize: 10,
     fontWeight: 500,
     color: "#328EA3",
     textAlign: "right",
   },
   section: {
-    marginBottom: 10,
+    marginBottom: 15,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: 500,
+    fontSize: 10,
+    fontWeight: 600,
     color: "#328EA3",
-    marginBottom: 15,
-    borderBottom: "1 solid #ecf0f1",
+    marginBottom: 10,
+    borderBottom: "1.5 solid #ecf0f1",
     paddingBottom: 5,
   },
   detailsGrid: {
@@ -78,12 +78,13 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     width: "50%",
-    marginBottom: 10,
+    marginBottom: 8,
+    paddingRight: 10,
   },
   detailLabel: {
-    fontSize: 11,
+    fontSize: 8,
     color: "#7f8c8d",
-    marginBottom: 2,
+    // marginBottom: 2,
   },
   detailValue: {
     fontSize: 10,
@@ -92,52 +93,61 @@ const styles = StyleSheet.create({
   },
   table: {
     display: "table",
-    width: "auto",
+    width: "100%",
     borderStyle: "solid",
     borderWidth: 1,
     borderColor: "#ecf0f1",
     borderRadius: 4,
-    marginTop: 5,
+    marginTop: 3,
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
     borderBottomColor: "#ecf0f1",
-    minHeight: 30,
+    minHeight: 10,
     alignItems: "center",
   },
   tableHeader: {
     backgroundColor: "#328EA3",
   },
   tableCol: {
-    width: "25%",
-    paddingVertical: 3,
-    paddingHorizontal: 5,
+    // paddingVertical: 2,
+    // paddingHorizontal: 2,
+    justifyContent: "center",
   },
   tableCell: {
     fontSize: 8,
     color: "#34495e",
+    textAlign: "left",
   },
   tableCellHeader: {
     color: "#ffffff",
     fontWeight: 700,
+    fontSize: 8,
+    textAlign: "center",
   },
   tableColParent: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#f1f5f8",
   },
   tableCellParent: {
-    fontWeight: 500,
+    fontWeight: 600,
+    fontSize: 8,
   },
+  
+  // Column width specifications
+  colSrNo: { width: "15%", justifyContent : "center" , alignContent : "center" , alignItems : "center"},
+  colChemicalName:{ width: "15%", justifyContent : "center" , alignContent : "center" , alignItems : "center"},
+  colTank: { width: "15%", justifyContent : "center" , alignContent : "center" , alignItems : "center"},
+  colRatio: { width: "15%", justifyContent : "center" , alignContent : "center" , alignItems : "center"},
+  colRatioUnit: { width: "15%", justifyContent : "center" , alignContent : "center" , alignItems : "center"},
+  colQuantity: { width: "15%", justifyContent : "center" , alignContent : "center" , alignItems : "center"},
+  colActualWeight: { width: "15%", justifyContent : "center" , alignContent : "center" , alignItems : "center"},
 
-  // manual entry
   manualEntrySection: {
     marginTop: 5,
-    marginBottom: 5,
-  },
-  underline: {
-    color: "#000000", // Black underline for manual entry
-    fontSize: 12, // Adjust the size to match your form style
-    letterSpacing: 2, // Space the underline characters a bit more
+    marginBottom: 10,
+    // borderTop: "1 solid #ecf0f1",
+    paddingTop: 10,
   },
 });
 
@@ -202,7 +212,7 @@ const DispensingDetailsPDF = ({ details }) => (
       />
       <DetailItem
         label="Created At"
-        value={ formatDate(details?.data.createdAt || "-")}
+        value={formatDate(details?.data.createdAt || "-")}
       />
     </View>
   </View>
@@ -210,8 +220,9 @@ const DispensingDetailsPDF = ({ details }) => (
 
 const DetailItem = ({ label, value }) => (
   <View style={styles.detailItem}>
-    <Text style={styles.detailLabel}>{label}</Text>
-    <Text style={styles.detailValue}>{value}</Text>
+    <Text style={styles.detailLabel}>
+      {label} : <Text style={{ color: "#328EA3" }}>{value}</Text>
+    </Text>
   </View>
 );
 
@@ -227,24 +238,29 @@ const DispensingTablePDF = ({ data }) => (
 
 const TableHeader = () => (
   <View style={[styles.tableRow, styles.tableHeader]}>
-    <View style={[styles.tableCol, { width: "10%" }]}>
+    <View style={[styles.tableCol, styles.colSrNo]}>
       <Text style={[styles.tableCell, styles.tableCellHeader]}>Sr no.</Text>
     </View>
-    <View style={[styles.tableCol, { width: "30%" }]}>
+    <View style={[styles.tableCol, styles.colChemicalName]}>
       <Text style={[styles.tableCell, styles.tableCellHeader]}>
         Chemical Name
       </Text>
     </View>
-    <View style={[styles.tableCol, { width: "15%" }]}>
+    <View style={[styles.tableCol, styles.colTank]}>
+      <Text style={[styles.tableCell, styles.tableCellHeader]}>Tank</Text>
+    </View>
+    <View style={[styles.tableCol, styles.colRatio]}>
       <Text style={[styles.tableCell, styles.tableCellHeader]}>Ratio</Text>
     </View>
-    <View style={[styles.tableCol, { width: "15%" }]}>
-      <Text style={[styles.tableCell, styles.tableCellHeader]}>Ratio Unit</Text>
+    <View style={[styles.tableCol, styles.colRatioUnit]}>
+      <Text style={[styles.tableCell, styles.tableCellHeader]}>
+        Ratio Unit
+      </Text>
     </View>
-    <View style={[styles.tableCol, { width: "15%" }]}>
+    <View style={[styles.tableCol, styles.colQuantity]}>
       <Text style={[styles.tableCell, styles.tableCellHeader]}>Quantity</Text>
     </View>
-    <View style={[styles.tableCol, { width: "15%" }]}>
+    <View style={[styles.tableCol, styles.colActualWeight]}>
       <Text style={[styles.tableCell, styles.tableCellHeader]}>
         Actual Weight
       </Text>
@@ -252,96 +268,103 @@ const TableHeader = () => (
   </View>
 );
 
-
-
 const TableBody = ({ data }) => {
   const calculateQuantity = (child) => {
     const ratio = child?.ratio;
     const literage = data?.data?.machineId?.literage;
     const batchWeight = data?.data?.batchWeight;
     const ratioUnit = child.ratioUnit;
-  
+
     let result = "-";
-  
+
     if (ratioUnit === "g/l") {
       result = ratio * literage;
     } else if (ratioUnit === "%") {
       result = batchWeight * ratio * 10;
     }
-  
+
     // If the result is a number, format it to two decimal places
     if (typeof result === "number") {
       return result.toFixed(2);
     }
-  
+
     return result;
   };
+  
   return (
-  <>
-    {data?.data.recipeId.parentChemicals.map((parent, index) => (
-      <React.Fragment key={index}>
-        <View style={[styles.tableRow, styles.tableColParent]}>
-          <View style={[styles.tableCol, { width: "10%" }]}>
-            <Text style={[styles.tableCell, styles.tableCellParent]}>
-              {index + 1}
-            </Text>
+    <>
+      {data?.data.recipeId.parentChemicals.map((parent, index) => (
+        <React.Fragment key={index}>
+          <View style={[styles.tableRow, styles.tableColParent]}>
+            <View style={[styles.tableCol, styles.colSrNo]}>
+              <Text style={[styles.tableCell, styles.tableCellParent]}>
+                {index + 1}
+              </Text>
+            </View>
+            <View style={[styles.tableCol, styles.colChemicalName]}>
+              <Text style={[styles.tableCell, styles.tableCellParent]}>
+                {parent.templateId.name}
+              </Text>
+            </View>
+            <View style={[styles.tableCol, styles.colTank]}>
+              <Text style={[styles.tableCell, styles.tableCellParent]}>-</Text>
+            </View>
+            <View style={[styles.tableCol, styles.colRatio]}>
+              <Text style={[styles.tableCell, styles.tableCellParent]}>-</Text>
+            </View>
+            <View style={[styles.tableCol, styles.colRatioUnit]}>
+              <Text style={[styles.tableCell, styles.tableCellParent]}>-</Text>
+            </View>
+            <View style={[styles.tableCol, styles.colQuantity]}>
+              <Text style={[styles.tableCell, styles.tableCellParent]}>-</Text>
+            </View>
+            <View style={[styles.tableCol, styles.colActualWeight]}>
+              <Text style={[styles.tableCell, styles.tableCellParent]}>-</Text>
+            </View>
           </View>
-          <View style={[styles.tableCol, { width: "30%" }]}>
-            <Text style={[styles.tableCell, styles.tableCellParent]}>
-              {parent.templateId.name}
-            </Text>
-          </View>
-          <View style={[styles.tableCol, { width: "15%" }]}>
-            <Text style={[styles.tableCell, styles.tableCellParent]}>-</Text>
-          </View>
-          <View style={[styles.tableCol, { width: "15%" }]}>
-            <Text style={[styles.tableCell, styles.tableCellParent]}>-</Text>
-          </View>
-          <View style={[styles.tableCol, { width: "15%" }]}>
-            <Text style={[styles.tableCell, styles.tableCellParent]}>-</Text>
-          </View>
-          <View style={[styles.tableCol, { width: "15%" }]}>
-            <Text style={[styles.tableCell, styles.tableCellParent]}>-</Text>
-          </View>
-        </View>
 
-        {parent.childChemicals?.map((child, childIndex) => (
-          <View style={styles.tableRow} key={`${index}-${childIndex}`}>
-            <View style={[styles.tableCol, { width: "10%" }]}>
-              <Text style={styles.tableCell}>
-                {index + 1}.{childIndex + 1}
-              </Text>
+          {parent.childChemicals?.map((child, childIndex) => (
+            <View style={styles.tableRow} key={`${index}-${childIndex}`}>
+              <View style={[styles.tableCol, styles.colSrNo]}>
+                <Text style={styles.tableCell}>
+                  {index + 1}.{childIndex + 1}
+                </Text>
+              </View>
+              <View style={[styles.tableCol, styles.colChemicalName]}>
+                <Text style={styles.tableCell}>
+                  {child?.chemicalId.name || "-"}
+                </Text>
+              </View>
+              <View style={[styles.tableCol, styles.colTank]}>
+                <Text style={styles.tableCell}>
+                  {child?.chemicalId.tankId.name || "-"}
+                </Text>
+              </View>
+              <View style={[styles.tableCol, styles.colRatio]}>
+                <Text style={styles.tableCell}>{child.ratio || "-"}</Text>
+              </View>
+              <View style={[styles.tableCol, styles.colRatioUnit]}>
+                <Text style={styles.tableCell}>{child?.ratioUnit || "-"}</Text>
+              </View>
+              <View style={[styles.tableCol, styles.colQuantity]}>
+                <Text style={styles.tableCell}>{calculateQuantity(child)}</Text>
+              </View>
+              <View style={[styles.tableCol, styles.colActualWeight]}>
+                <Text style={styles.tableCell}>-</Text>
+              </View>
             </View>
-            <View style={[styles.tableCol, { width: "30%" }]}>
-              <Text style={styles.tableCell}>
-                {child?.chemicalId.name || "-"}
-              </Text>
-            </View>
-            <View style={[styles.tableCol, { width: "15%" }]}>
-              <Text style={styles.tableCell}>{child.ratio || "-"}</Text>
-            </View>
-            <View style={[styles.tableCol, { width: "15%" }]}>
-              <Text style={styles.tableCell}>{child?.ratioUnit || "-"}</Text>
-            </View>
-            <View style={[styles.tableCol, { width: "15%" }]}>
-              <Text style={styles.tableCell}>{calculateQuantity(child)}</Text>
-            </View>
-            <View style={[styles.tableCol, { width: "15%" }]}>
-              <Text style={styles.tableCell}>-</Text>
-            </View>
-          </View>
-        ))}
-      </React.Fragment>
-    ))}
-  </>
-)};
+          ))}
+        </React.Fragment>
+      ))}
+    </>
+  );
+};
 
 const ManualEntryFields = () => (
   <View style={styles.manualEntrySection}>
-    <Text style={styles.sectionTitle}></Text>
+    <Text style={styles.sectionTitle}>Manual Entry</Text>
     <View style={styles.detailsGrid}>
       <DetailItem label="Date:" value=" " />{" "}
-      {/* Empty value for manual entry */}
       <DetailItem label="Operator Name:" value=" " />
       <DetailItem label="Shift :" value=" " />
       <DetailItem label="Start Time :" value=" " />

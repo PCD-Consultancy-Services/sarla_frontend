@@ -8,6 +8,7 @@ import FormLayout from "../../layout/FormLayout";
 import { useDispatch } from "react-redux";
 import { useDebounce } from "../../hooks/useDebounce";
 import { searchShade } from "../../redux/Slices/Execution/ShadeSlice";
+import Loader from "../Loader";
 
 const ShadeForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
   const {
@@ -27,7 +28,7 @@ const ShadeForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
   const [shadeInputValue, setShadeInputValue] = useState("");
   const [colorInputValue, setColorInputValue] = useState("");
 
-  const [activeInput, setActiveInput] = useState(null); 
+  const [activeInput, setActiveInput] = useState(null);
 
   const dispatch = useDispatch();
   const debouncedShadeInputValue = useDebounce(shadeInputValue);
@@ -35,24 +36,27 @@ const ShadeForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
 
   // Fetch initial data if provided
   useEffect(() => {
-    if (initialData && Object.keys(initialData).length) {
+    if (initialData && Object.keys(initialData)?.length) {
       reset({
         shadeCode: initialData.shadeCode || "",
         color: initialData.color || "",
       });
-      setShadeInputValue(initialData.shadeCode || ""); 
-      setColorInputValue(initialData.color || ""); 
+      setShadeInputValue(initialData.shadeCode || "");
+      setColorInputValue(initialData.color || "");
     }
   }, [initialData, reset]);
 
   // Fetch shade options on input change
   useEffect(() => {
-    if (activeInput === "shade" && debouncedShadeInputValue.length > 0) {
+    if (
+      activeInput === "shade" &&
+      debouncedShadeInputValue?.trim().length > 0
+    ) {
       dispatch(
         searchShade({ shadeCode: debouncedShadeInputValue.trim() })
       ).then((action) => {
         if (action.payload) {
-          setShadeOptions(action.payload.data.results);
+          setShadeOptions(action.payload.data.results || []);
         }
       });
     } else {
@@ -60,10 +64,35 @@ const ShadeForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
     }
   }, [debouncedShadeInputValue, activeInput, dispatch]);
 
+  useEffect(() => {
+    if (
+      activeInput === "color" &&
+      debouncedColorInputValue?.trim().length > 0
+    ) {
+      dispatch(searchShade({ color: debouncedColorInputValue.trim() })).then(
+        (action) => {
+          if (action.payload) {
+            const uniqueColors = [];
+            const seenColors = new Set();
+            (action.payload.data.results || []).forEach((item) => {
+              if (!seenColors.has(item.color)) {
+                uniqueColors.push(item);
+                seenColors.add(item.color);
+              }
+            });
+            setColorOptions(uniqueColors);
+          }
+        }
+      );
+    } else {
+      setColorOptions([]);
+    }
+  }, [debouncedColorInputValue, activeInput, dispatch]);
+
   // Fetch color options on input change
   useEffect(() => {
-    if (activeInput === "color" && debouncedColorInputValue.length > 1) {
-      dispatch(searchShade({ color: debouncedColorInputValue.trim() })).then(
+    if (activeInput === "color" && debouncedColorInputValue?.length > 1) {
+      dispatch(searchShade({ color: debouncedColorInputValue?.trim() })).then(
         (action) => {
           if (action.payload) {
             const uniqueColors = [];
@@ -83,6 +112,14 @@ const ShadeForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
     }
   }, [debouncedColorInputValue, activeInput, dispatch]);
 
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
+
   return (
     <FormLayout
       onSubmit={handleSubmit(onSubmit)}
@@ -98,15 +135,16 @@ const ShadeForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
           <Autocomplete
             freeSolo
             options={shadeOptions}
-            getOptionLabel={(option) => option.shadeCode}
-            inputValue={shadeInputValue}
+            getOptionLabel={(option) => (option?.shadeCode || "").toString()}
+            inputValue={shadeInputValue || ""}
             onInputChange={(event, newValue) => {
-              setShadeInputValue(newValue);
-              setActiveInput("shade"); // Set active input to shade
+              setShadeInputValue(newValue || "");
+              setActiveInput("shade");
             }}
             onChange={(event, value) => {
-              setValue("shadeCode", value ? value.shadeCode : shadeInputValue);
-              setShadeInputValue(value ? value.shadeCode : shadeInputValue);
+              const shadeCode = value?.shadeCode || shadeInputValue;
+              setValue("shadeCode", shadeCode);
+              setShadeInputValue(shadeCode);
             }}
             renderInput={(params) => (
               <TextField
@@ -115,6 +153,7 @@ const ShadeForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
                 error={!!errors.shadeCode}
                 helperText={errors.shadeCode?.message}
                 disabled={loading}
+                className="mt-3"
                 label="Enter Shade Code"
                 variant="outlined"
                 InputLabelProps={{ shrink: !!watch("shadeCode") }}
@@ -135,15 +174,16 @@ const ShadeForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
           <Autocomplete
             freeSolo
             options={colorOptions}
-            getOptionLabel={(option) => option.color}
-            inputValue={colorInputValue}
+            getOptionLabel={(option) => option.color || ""}
+            inputValue={colorInputValue || ""}
             onInputChange={(event, newValue) => {
-              setColorInputValue(newValue);
-              setActiveInput("color"); // Set active input to color
+              setColorInputValue(newValue || ""); // Handle empty or null value
+              setActiveInput("color");
             }}
             onChange={(event, value) => {
-              setValue("color", value ? value.color : colorInputValue);
-              setColorInputValue(value ? value.color : colorInputValue);
+              const color = value?.color || colorInputValue; // Fallback to input value
+              setValue("color", color || ""); // Avoid undefined
+              setColorInputValue(color || ""); // Ensure valid fallback
             }}
             renderInput={(params) => (
               <TextField
@@ -152,6 +192,7 @@ const ShadeForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
                 error={!!errors.color}
                 helperText={errors.color?.message}
                 disabled={loading}
+                className="mt-3"
                 label="Enter Shade Color"
                 variant="outlined"
                 InputLabelProps={{ shrink: !!watch("color") }}

@@ -8,6 +8,7 @@ import {
   Select,
   FormHelperText,
   CircularProgress,
+  InputAdornment,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -18,6 +19,7 @@ import {
 import FormLayout from "../../layout/FormLayout";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchRoles } from "../../redux/Slices/Master/RolesSlice";
+import Loader from "../../components/Loader";
 
 const UserForm = ({
   onSubmit,
@@ -27,10 +29,10 @@ const UserForm = ({
   isEdit = false,
 }) => {
   const dispatch = useDispatch();
-  const { roles } = useSelector((state) => state.roles);
+  const { roles, loading: rolesLoding } = useSelector((state) => state.roles);
 
   useEffect(() => {
-    dispatch(fetchRoles({ pageSize: 5, page: 1 }));
+    dispatch(fetchRoles({ pageSize: 10, page: 1 }));
   }, [dispatch]);
 
   const {
@@ -69,8 +71,25 @@ const UserForm = ({
         confirmPassword: "",
         role: initialData?.role?.key || "",
       });
+    } else {
+      reset({
+        name: "",
+        email: "",
+        mobileNum: "",
+        password: "",
+        confirmPassword: "",
+        role: "",
+      });
     }
   }, [initialData, reset]);
+
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <FormLayout
@@ -138,6 +157,7 @@ const UserForm = ({
           }}
         />
       </Grid>
+
       <Grid item xs={6}>
         <label className="formLabel">
           Role <span className="startColor">*</span>
@@ -154,7 +174,15 @@ const UserForm = ({
                 label="Select Role"
                 labelId="role-select-label"
                 id="role-select"
-                disabled={loading}
+                disabled={loading || rolesLoding}
+                endAdornment={
+                  loading ||
+                  (rolesLoding && (
+                    <InputAdornment position="end">
+                      <CircularProgress size={20} />
+                    </InputAdornment>
+                  ))
+                }
               >
                 <MenuItem value="">
                   <em>None</em>

@@ -21,6 +21,7 @@ import {
   TemplateConfig,
   User,
   ViewAll,
+  Duplicate,
 } from "../constants";
 
 const URL = {
@@ -37,10 +38,12 @@ const URL = {
   addShade: `/${Execution}/${Shade}/${AddNew}`,
   editShade: `/${Execution}/${Shade}/${Edit}-${Shade}/:id`,
 
+
   //  Recipe
   viewAllRecipe: `/${Execution}/${Recipe}/${ViewAll}`,
   addRecipe: `/${Execution}/${Recipe}/${AddNew}`,
   editRecipe: `/${Execution}/${Recipe}/${Edit}-${Recipe}/:id`,
+  duplicateRecipe: `/${Execution}/${Recipe}/${Duplicate}-${Recipe}/:id`,
 
   // Schedule
   viewAllSchedule: `/${Execution}/${Schedule}/${ViewAll}`,

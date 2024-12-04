@@ -26,6 +26,10 @@ const headerURL = {
     text: "Edit Recipe",
     path: "Recipe / Edit Recipe",
   },
+  duplicateRecipe: {
+    text: "Duplicate Recipe",
+    path: "Recipe / Add Duplicate/Copied Recipe",
+  },
 
   // Schedule
   viewSchedule: {

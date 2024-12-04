@@ -31,12 +31,12 @@ const ResetPassword = () => {
   const onSubmit = async (data) => {
     try {
       const token = searchParams.get("token");
-      console.log(token, "tokeeeeeeeeeeeeeeeeeeee");
+
 
       const response = await dispatch(
         resetPassword({ token, newPassword: data.newPassword })
       ).unwrap();
-      console.log(token, "tokeeeeeeeeeeeeeeeeeeee");
+     
 
       Swal.fire({
         title: "Success!",

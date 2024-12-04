@@ -9,18 +9,17 @@ import {
   createShade,
   searchShade,
 } from "../../../redux/Slices/Execution/ShadeSlice";
-import ShadeForm from "../../../components/Forms/ShadeForm"; // Assuming you create this form component
+import ShadeForm from "../../../components/Forms/ShadeForm"; 
 import URL from "../../../routes/URLs";
 
 const AddShade = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { loading } = useSelector((state) => state.shade);
-  const { shadeOptions, colorOptions } = useSelector((state) => state.shade);
+
+  const { shadeOptions, colorOptions , loading } = useSelector((state) => state.shade);
 
   useEffect(() => {
-    // Set header text and path
     dispatch(
       textState({
         text: headerURL.addShade.text,
@@ -30,6 +29,7 @@ const AddShade = () => {
   }, [dispatch]);
 
   const onSubmit = async (shadeData) => {
+    console.log(shadeData , "shadeData")
     try {
       const response = await dispatch(createShade(shadeData)).unwrap();
       Swal.fire({

@@ -13,7 +13,7 @@ const initialState = {
   totalResults: 0,
   hasNextPage: null,
   hasPrevPage: null,
-  pageSize: 5,
+  pageSize: 10,
 };
 
 // fetch tanks
@@ -81,6 +81,25 @@ export const updateTank = createAsyncThunk(
     try {
       const response = await axiosInstance.put(`/tank/${id}`, data);
       return response.data;
+    } catch (error) {
+      const errorPayload = generateErrorPayload(error);
+      return rejectWithValue(errorPayload);
+    }
+  }
+);
+
+// search tank
+export const searchTank = createAsyncThunk(
+  "services/searchTank",
+  async ({ pageSize = 10, name }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get(`/chemical/tank/search`,{
+        params : {
+          q : name,
+          pageSize
+        }
+      });
+      return response.data
     } catch (error) {
       const errorPayload = generateErrorPayload(error);
       return rejectWithValue(errorPayload);
@@ -168,6 +187,21 @@ const tankSlice = createSlice({
         state.error = null;
       })
       .addCase(updateTank.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+       // search tank
+       .addCase(searchTank.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(searchTank.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.allTanks = action.payload.data.results;
+      })
+      .addCase(searchTank.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

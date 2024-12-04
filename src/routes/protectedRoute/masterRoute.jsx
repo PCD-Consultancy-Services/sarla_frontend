@@ -1,80 +1,71 @@
 import URL from "../URLs";
 // pages
-import ViewChemical from "../../pages/Masters/Chemical/ViewChemical";
-import AddChemical from "../../pages/Masters/Chemical/AddChemical";
-import EditChemical from "../../pages/Masters/Chemical/EditChemical";
-import ViewClassification from "../../pages/Masters/Classification/ViewClassification";
-import AddClassification from "../../pages/Masters/Classification/AddClassification";
-import EditClassification from "../../pages/Masters/Classification/EditClassification";
-import ViewTank from "../../pages/Masters/Tank/ViewTank";
-import AddTank from "../../pages/Masters/Tank/AddTank";
-import EditTank from "../../pages/Masters/Tank/EditTank";
-import ViewCustomer from "../../pages/Masters/Customer/ViewCustomer";
-import AddCustomer from "../../pages/Masters/Customer/AddCustomer";
-import EditCustomer from "../../pages/Masters/Customer/EditCustomer";
-import ViewQuality from "../../pages/Masters/Quality/ViewQuality";
-import AddQuality from "../../pages/Masters/Quality/AddQuality";
-import EditQuality from "../../pages/Masters/Quality/EditQuality";
-import AddMachine from "../../pages/Masters/Machine/AddMachine";
-import ViewMachine from "../../pages/Masters/Machine/ViewMachine";
-import EditMachine from "../../pages/Masters/Machine/EditMachine";
-import ViewTemplate from "../../pages/Masters/Master_Templates/ViewTemplate";
-import AddTemplate from "../../pages/Masters/Master_Templates/AddTemplate";
-import EditTemplate from "../../pages/Masters/Master_Templates/EditTemplate";
-import AddUser from "../../pages/Masters/Users/AddUser";
-import ViewUser from "../../pages/Masters/Users/ViewUser";
-import EditUser from "../../pages/Masters/Users/EditUser";
+import ListChemical from "../../pages/Masters/Chemical/ListChemical";
+import ListTemplates from "../../pages/Masters/Master_Templates/ListTemplates";
+import ListUsers from "../../pages/Masters/Users/ListUsers";
 import Profile from "../../pages/Profile/Profile";
-import ViewService from "../../pages/Masters/Service/ViewService";
-import AddService from "../../pages/Masters/Service/AddService";
-import EditService from "../../pages/Masters/Service/EditService";
-import ViewTemplateConfig from "../../pages/Masters/Template_Config/ViewTemplateConfig";
+import ListTemplateConfig from "../../pages/Masters/Template_Config/ListTemplateConfig";
 import EditTemplateConfig from "../../pages/Masters/Template_Config/EditTemplateConfig";
 import ChangePasssword from "../../pages/Profile/ChangePassword";
 import { Navigate } from "react-router-dom";
+import Machine from "../../pages/Masters/Machine";
+import Users from "../../pages/Masters/Users";
+import MasterTemplate from "../../pages/Masters/Master_Templates";
+import ListMachine from "../../pages/Masters/Machine/ListMachine";
+import ListQuality from "../../pages/Masters/Quality/ListQuality";
+import Quality from "../../pages/Masters/Quality";
+import ListCustomer from "../../pages/Masters/Customer/ListCustomer";
+import Customer from "../../pages/Masters/Customer";
+import ListService from "../../pages/Masters/Service/ListService";
+import Service from "../../pages/Masters/Service";
+import Tank from "../../pages/Masters/Tank";
+import ListTank from "../../pages/Masters/Tank/ListTank";
+import ListClassification from "../../pages/Masters/Classification/ListClassification";
+import Classification from "../../pages/Masters/Classification";
+import Chemical from "../../pages/Masters/Chemical";
 
 //Master-Routes
 const masterRoutes = [
   { path: `*`, element: <Navigate to={`${URL.viewAllChemical}`} /> },
-  { path: `${URL.viewAllChemical}`, element: <ViewChemical /> },
-  { path: `${URL.addChemical}`, element: <AddChemical /> },
-  { path: `${URL.editChemical}`, element: <EditChemical /> },
+  { path: `${URL.viewAllChemical}`, element: <ListChemical /> },
+  { path: `${URL.addChemical}`, element: <Chemical /> },
+  { path: `${URL.editChemical}`, element: <Chemical /> },
 
-  { path: `${URL.viewAllClassification}`, element: <ViewClassification /> },
-  { path: `${URL.addClassification}`, element: <AddClassification /> },
-  { path: `${URL.editClassification}`, element: <EditClassification /> },
+  { path: `${URL.viewAllClassification}`, element: <ListClassification /> },
+  { path: `${URL.addClassification}`, element: <Classification /> },
+  { path: `${URL.editClassification}`, element: <Classification /> },
 
-  { path: `${URL.viewAllTank}`, element: <ViewTank /> },
-  { path: `${URL.addTank}`, element: <AddTank /> },
-  { path: `${URL.editTank}`, element: <EditTank /> },
+  { path: `${URL.viewAllTank}`, element: <ListTank /> },
+  { path: `${URL.addTank}`, element: <Tank /> },
+  { path: `${URL.editTank}`, element: <Tank /> },
 
-  { path: `${URL.viewAllService}`, element: <ViewService /> },
-  { path: `${URL.addService}`, element: <AddService /> },
-  { path: `${URL.editService}`, element: <EditService /> },
+  { path: `${URL.viewAllService}`, element: <ListService /> },
+  { path: `${URL.addService}`, element: <Service /> },
+  { path: `${URL.editService}`, element: <Service /> },
 
-  { path: `${URL.viewCustomer}`, element: <ViewCustomer /> },
-  { path: `${URL.addCustomer}`, element: <AddCustomer /> },
-  { path: `${URL.editCustomer}`, element: <EditCustomer /> },
+  { path: `${URL.viewAllCustomer}`, element: <ListCustomer /> },
+  { path: `${URL.addCustomer}`, element: <Customer /> },
+  { path: `${URL.editCustomer}`, element: <Customer /> },
 
-  { path: `${URL.viewQuality}`, element: <ViewQuality /> },
-  { path: `${URL.addQuality}`, element: <AddQuality /> },
-  { path: `${URL.editQuality}`, element: <EditQuality /> },
+  { path: `${URL.viewQuality}`, element: <ListQuality /> },
+  { path: `${URL.addQuality}`, element: <Quality /> },
+  { path: `${URL.editQuality}`, element: <Quality /> },
 
-  { path: `${URL.viewMachine}`, element: <ViewMachine /> },
-  { path: `${URL.addMachine}`, element: <AddMachine /> },
-  { path: `${URL.editMachine}`, element: <EditMachine /> },
+  { path: `${URL.viewMachine}`, element: <ListMachine /> },
+  { path: `${URL.addMachine}`, element: <Machine /> },
+  { path: `${URL.editMachine}`, element: <Machine /> },
 
-  { path: `${URL.viewTemplate}`, element: <ViewTemplate /> },
-  { path: `${URL.addTemplate}`, element: <AddTemplate /> },
-  { path: `${URL.editTemplate}`, element: <EditTemplate /> },
+  { path: `${URL.viewTemplate}`, element: <ListTemplates /> },
+  { path: `${URL.addTemplate}`, element: <MasterTemplate /> },
+  { path: `${URL.editTemplate}`, element: <MasterTemplate /> },
 
-  { path: `${URL.viewTemplateConfig}`, element: <ViewTemplateConfig /> },
+  { path: `${URL.viewTemplateConfig}`, element: <ListTemplateConfig /> },
   // {path : `${URL.addTemplate}` , element: <AddTemplate /> },
   { path: `${URL.editTemplateConfig}`, element: <EditTemplateConfig /> },
 
-  { path: `${URL.viewUser}`, element: <ViewUser /> },
-  { path: `${URL.addUser}`, element: <AddUser /> },
-  { path: `${URL.editUser}`, element: <EditUser /> },
+  { path: `${URL.viewUser}`, element: <ListUsers /> },
+  { path: `${URL.addUser}`, element: <Users /> },
+  { path: `${URL.editUser}`, element: <Users /> },
 
   { path: `${URL.profile}`, element: <Profile /> },
   { path: `${URL.changePassword}`, element: <ChangePasssword /> },

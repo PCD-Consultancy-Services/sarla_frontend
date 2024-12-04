@@ -13,22 +13,16 @@ const initialState = {
   totalResults: 0,
   hasNextPage: null,
   hasPrevPage: null,
-  pageSize: 5,
+  pageSize: 10,
 };
 
-// search chemicals
-export const searchChemicals = createAsyncThunk(
-  "chemicals/searchChemicals",
-  async (params, { rejectWithValue }) => {
-    const { q ,page , pageSize } = params;
-    console.log(q,page , pageSize, "0000000000000")
+// fetch chemicals
+export const fetchChemicals = createAsyncThunk(
+  "chemicals/fetchChemicals",
+  async ({ pageSize, page }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get("/chemical/search", {
-        params: {
-          q,
-          page,
-          pageSize
-        },
+      const response = await axiosInstance.get(`/recipe/get/chemical`, {
+        params: { pageSize, page },
       });
       return response.data;
     } catch (error) {
@@ -38,21 +32,6 @@ export const searchChemicals = createAsyncThunk(
   }
 );
 
-// fetch chemicals
-export const fetchChemicals = createAsyncThunk(
-  "chemicals/fetchChemicals",
-  async ({ pageSize, page }, { rejectWithValue }) => {
-    try {
-      const response = await axiosInstance.get(
-        `/recipe/get/chemical?pageSize=${pageSize}&page=${page}`
-      );
-      return response.data;
-    } catch (error) {
-      const errorPayload = generateErrorPayload(error);
-      return rejectWithValue(errorPayload);
-    }
-  }
-);
 
 // create chemicals
 export const createChemical = createAsyncThunk(
@@ -110,6 +89,44 @@ export const updateChemical = createAsyncThunk(
   }
 );
 
+// search chemical for template
+export const searchChemicalForTemplate = createAsyncThunk(
+  "chemical/searchChemicalForTemplate",
+  async ({ pageSize = 10, name }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get(`/master-template/chemical/search`,{
+        params : {
+          q : name,
+          pageSize
+        }
+      });
+      return response.data
+    } catch (error) {
+      const errorPayload = generateErrorPayload(error);
+      return rejectWithValue(errorPayload);
+    }
+  }
+);
+
+// search chemical for recipe (execution)
+export const searchChemicalForRecipe = createAsyncThunk(
+  "chemical/searchChemicalForRecipe",
+  async ({ pageSize = 10, name }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get(`/recipe/chemical/search`,{
+        params : {
+          q : name,
+          pageSize
+        }
+      });
+      return response.data
+    } catch (error) {
+      const errorPayload = generateErrorPayload(error);
+      return rejectWithValue(errorPayload);
+    }
+  }
+);
+
 const chemicalSlice = createSlice({
   name: "chemical",
   initialState,
@@ -117,25 +134,32 @@ const chemicalSlice = createSlice({
   extraReducers: (builder) => {
     builder
 
-      // Search Chemicals
-      .addCase(searchChemicals.pending, (state) => {
+      // Search Chemicals for template
+      .addCase(searchChemicalForTemplate.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(searchChemicals.fulfilled, (state, action) => {
+      .addCase(searchChemicalForTemplate.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
         state.allChemicals = action.payload.data.results;
-
-        //pagination
-        state.totalResults = action.payload.data.totalResults;
-        state.currentPage = action.payload.data.currentPage;
-        state.totalPages = action.payload.data.totalPages;
-        state.pageSize = action.payload.data.pageSize;
-        state.hasNextPage = action.payload.data.hasNextPage;
-        state.hasPrevPage = action.payload.data.hasPrevPage;
       })
-      .addCase(searchChemicals.rejected, (state, action) => {
+      .addCase(searchChemicalForTemplate.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Search Chemicals for recipe (Execution)
+      .addCase(searchChemicalForRecipe.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(searchChemicalForRecipe.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.allChemicals = action.payload.data.results;
+      })
+      .addCase(searchChemicalForRecipe.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

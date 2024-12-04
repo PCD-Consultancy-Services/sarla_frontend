@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { serviceSchema } from "../../validators/serviceValidation";
 import FormLayout from "../../layout/FormLayout";
+import Loader from "../Loader";
 
 const ServiceForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
   const {
@@ -23,8 +24,20 @@ const ServiceForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
       reset({
         name: initialData?.name || "",
       });
+    }else{
+      reset({
+        name:  "",
+      });
     }
   }, [initialData, reset]);
+
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <FormLayout onSubmit={handleSubmit(onSubmit)} onCancel={onCancel} loading={loading}>

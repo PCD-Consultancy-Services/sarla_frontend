@@ -1,5 +1,4 @@
 import {
-  Autocomplete,
   Box,
   Button,
   CircularProgress,
@@ -9,7 +8,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  TextField,
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
@@ -18,16 +16,9 @@ import headerURL from "../../headerURL";
 import { textState } from "../../../redux/Slices/Theme/themeSetting";
 import URL from "../../../routes/URLs";
 import { useNavigate } from "react-router-dom";
-import { useDebounce } from "../../../hooks/useDebounce";
-import {
-  searchShade,
-} from "../../../redux/Slices/Execution/ShadeSlice";
-import {
-  searchQuality,
-} from "../../../redux/Slices/Master/QualitySlice";
-import {
-  searchCustomer,
-} from "../../../redux/Slices/Master/CustomerSlice";
+import { searchShade } from "../../../redux/Slices/Execution/ShadeSlice";
+import { searchQuality } from "../../../redux/Slices/Master/QualitySlice";
+import { searchCustomer } from "../../../redux/Slices/Master/CustomerSlice";
 import { fetchRecipesUnits } from "../../../redux/Slices/Execution/RecipeUnitsSlice";
 import { Controller, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -49,9 +40,10 @@ import {
 } from "../../../redux/Slices/Execution/ChemicalManagement";
 import Swal from "sweetalert2";
 import ChemicalModal from "../../../components/Recipe/ChemicalModal";
-import Listbox from "../../../components/InfiniteScroll";
 import RecipeTable from "../../../components/Recipe/RecipeTable";
 import { fetchChemicalsUnits } from "../../../redux/Slices/Master/ChemicalUnitsSlice";
+import SearchableAutocomplete from "../../../components/SearchableAutoComplete";
+import { ChemicalModalSchema } from "../../../validators/chemicalModal.validations";
 
 const AddRecipe = () => {
   // -------------------------------------------------------------------------
@@ -59,7 +51,7 @@ const AddRecipe = () => {
   const dispatch = useDispatch();
   const condition = useSelector((state) => state.theme.checkCondition);
   const sectionClass = condition.isOpen ? "page-padding" : "normal-padding";
-  // 
+  //
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -77,39 +69,55 @@ const AddRecipe = () => {
 
   const { parentChemicals } = useSelector((state) => state.manageChemicals);
 
+  const { allShade } = useSelector((state) => state.shade);
+
+  const { allQualities } = useSelector((state) => state.quality);
+
+  const { allCustomers } = useSelector((state) => state.customer);
+
   const [isAddMasterTemplateClicked, setisAddMasterTemplateClicked] =
     useState();
 
-  const [chemicalForm, setchemicalForm] = useState({
-    chemicalId: "",
-    name :"",
-    ratio: "",
-    ratioUnit: "",
+  const chemicalForm = useForm({
+    defaultValues: {
+      chemicalId: "",
+      name: "",
+      ratio: "",
+      ratioUnit: "",
+    },
+    resolver: yupResolver(ChemicalModalSchema),
   });
 
-  const handleChemicalFormChange = (changes) => {
-    setchemicalForm(prevForm => ({
-      ...prevForm,
-      ...changes
-    }));
-  };
-
-  const handle_Add_OR_EDIT_Child_Submit = (e) => {
-    e.preventDefault();
+  const handle_Add_OR_EDIT_Child_Submit = (data) => {
     if (modalMode === "add") {
+      const existingChildChemicals =
+        parentChemicals[editingIndex.parentIndex].childChemicals;
+      const isDuplicate = existingChildChemicals.some(
+        (child) => child.chemicalId === data.chemicalId
+      );
+      if (isDuplicate) {
+        Swal.fire({
+          icon: "error",
+          title: "Duplicate Chemical",
+          text: "This chemical has already been added.",
+        });
+        setModalOpen(false);
+        return; // Prevent further execution
+      }
+
       if (editingIndex.childIndex !== null) {
         dispatch(
           addSubChildChemical({
             parentIndex: editingIndex.parentIndex,
             childIndex: editingIndex.childIndex,
-            subChildChemical: chemicalForm,
+            subChildChemical: data,
           })
         );
       } else {
         dispatch(
           addChildChemical({
             parentIndex: editingIndex.parentIndex,
-            childChemical: chemicalForm,
+            childChemical: data,
           })
         );
       }
@@ -118,7 +126,7 @@ const AddRecipe = () => {
         updateChildChemical({
           parentIndex: editingIndex.parentIndex,
           childIndex: editingIndex.childIndex,
-          updatedChild: chemicalForm,
+          updatedChild: data,
         })
       );
     }
@@ -133,20 +141,31 @@ const AddRecipe = () => {
   const handleOpenModal = (mode, parentIndex = null, childIndex = null) => {
     setModalMode(mode);
     if (mode === "edit") {
-      const childChemical = parentChemicals[parentIndex].childChemicals[childIndex];
-      setchemicalForm({
+      const childChemical =
+        parentChemicals[parentIndex].childChemicals[childIndex];
+      chemicalForm.reset({
         chemicalId: childChemical.chemicalId,
+        name: childChemical.name,
         ratio: childChemical.ratio,
         ratioUnit: childChemical.ratioUnit,
       });
+    } else if (mode === "add") {
+      chemicalForm.reset({
+        chemicalId: "",
+        name: "",
+        ratio: "",
+        ratioUnit: "",
+      });
+      dispatch(fetchChemicals({}));
     }
+
     setEditingIndex({ parentIndex, childIndex });
     setModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setModalOpen(false);
-    setchemicalForm({ chemicalId: "", ratio: "", ratioUnit: "" });
+    chemicalForm.reset();
   };
 
   const handleDeleteParentChemical = (index) => {
@@ -157,105 +176,6 @@ const AddRecipe = () => {
     dispatch(deleteChildChemical({ parentIndex, childIndex }));
   };
 
-  // State for search queries and selected values---------------------
-  const [searchQueries, setSearchQueries] = useState({
-    shade: "",
-    quality: "",
-    customer: "",
-  });
-  const [selectedIds, setSelectedIds] = useState({
-    shade: null,
-    quality: null,
-    customer: null,
-  });
-  const [pageSizes, setPageSizes] = useState({
-    shade: 5,
-    quality: 5,
-    customer: 5,
-  });
-
-  const debouncedSearchQueries = {
-    shade: useDebounce(searchQueries.shade, 300),
-    quality: useDebounce(searchQueries.quality, 300),
-    customer: useDebounce(searchQueries.customer, 300),
-  };
-
-  // Fetch shades
-  const { allShade, loading: shadeLoading } = useSelector(
-    (state) => state.shade
-  );
-  useEffect(() => {
-    const shadeSearch = debouncedSearchQueries.shade;
-    if (shadeSearch.length > 0) {
-      dispatch(
-        searchShade({
-          shadeCode: debouncedSearchQueries.shade,
-          pageSize: pageSizes.shade,
-        })
-      );
-    } else {
-      dispatch(searchShade({ pageSize: pageSizes.shade }));
-    }
-  }, [debouncedSearchQueries.shade, dispatch, pageSizes.shade]);
-
-  // Fetch quality
-  const { allQualities, loading: qualityLoading } = useSelector(
-    (state) => state.quality
-  );
-  useEffect(() => {
-    const qualitySearch = debouncedSearchQueries.quality;
-    if (qualitySearch.length > 0) {
-      dispatch(
-        searchQuality({
-          qualityCode: debouncedSearchQueries.quality,
-          pageSize: pageSizes.quality,
-        })
-      );
-    } else {
-      dispatch(searchQuality({ pageSize: pageSizes.quality }));
-    }
-  }, [debouncedSearchQueries.quality, dispatch, pageSizes.quality]);
-
-  // Fetch customers
-  const { allCustomers, loading: customerLoading } = useSelector(
-    (state) => state.customer
-  );
-  useEffect(() => {
-    const customerSearch = debouncedSearchQueries.customer;
-    if (customerSearch.length > 0) {
-      dispatch(
-        searchCustomer({
-          customerName: debouncedSearchQueries.customer,
-          pageSize: pageSizes.customer,
-        })
-      );
-    } else {
-      dispatch(searchCustomer({ pageSize: pageSizes.customer }));
-    }
-  }, [debouncedSearchQueries.customer, dispatch, pageSizes.customer]);
-
-  // Common function for handling scroll and loading more items
-  const handleListEnd = (searchType) => {
-    setPageSizes((prevSizes) => ({
-      ...prevSizes,
-      [searchType]: prevSizes[searchType] + 5,
-    }));
-  };
-
-  // Common function for handling input change
-  const handleInputChange = (type) => (event, newInputValue) => {
-    setSearchQueries((prev) => ({ ...prev, [type]: newInputValue }));
-  };
-
-  // Common function for handling selection change
-  const handleSelectionChange = (type) => (event, newValue) => {
-    setSelectedIds((prev) => ({ ...prev, [type]: newValue }));
-    if (newValue) {
-      setValue(type + "Id", newValue._id, { shouldValidate: true });
-    } else {
-      setValue(type + "Id", "", { shouldValidate: true });
-    }
-  };
   // --------------------------------------------------
   // template id
 
@@ -273,16 +193,21 @@ const AddRecipe = () => {
     );
     dispatch(fetchRecipesUnits());
     dispatch(fetchTemplates());
-    dispatch(fetchChemicals({}));
     dispatch(fetchChemicalsUnits({}));
-    // dispatch(fetchChemicals({ pageSize: 10, page: 1 }));
+    dispatch(fetchChemicals({ pageSize: 10, page: 1 }));
     // dispatch(fetchChemicalsUnits({ pageSize: 10, page: 1 }));
+
+    // initial data for shade , customer , quality
+    dispatch(searchShade({}));
+    dispatch(searchCustomer({}));
+    dispatch(searchQuality({}));
   }, [dispatch]);
 
   const {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -328,7 +253,7 @@ const AddRecipe = () => {
     }
 
     const { templateId, ...restData } = data;
-    
+
     const formattedData = {
       ...restData,
       parentChemicals: parentChemicals.map((parent) => ({
@@ -358,7 +283,7 @@ const AddRecipe = () => {
   };
 
   const isParentChemicalsThere = parentChemicals.length > 0;
-
+  console.log(errors, "yup");
   return (
     <section
       className={`sky-bg ${
@@ -378,47 +303,34 @@ const AddRecipe = () => {
               <label className="formLabel mb-2">
                 Shade <span className="startColor">*</span>
               </label>
-              <Controller
-                name="shadeId"
-                control={control}
-                render={({ field: { onChange } }) => (
-                  <Autocomplete
-                    options={allShade}
-                    getOptionLabel={(option) =>
-                      `${option.shadeCode} - ${option.color}` || ""
-                    }
-                    onInputChange={handleInputChange("shade")}
-                    isOptionEqualToValue={(option, value) =>
-                      option._id === value?._id
-                    }
-                    value={selectedIds.shade}
-                    onChange={handleSelectionChange("shade")}
-                    loading={shadeLoading}
-                    ListboxComponent={(props) => (
-                      <Listbox
-                        {...props}
-                        onListEnd={() => handleListEnd("shade")}
-                      />
-                    )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Shade"
-                        variant="outlined"
-                        fullWidth
-                        error={!!errors.shadeId}
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: <>{params.InputProps.endAdornment}</>,
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
-              {errors.shadeId && (
-                <FormHelperText error>{errors.shadeId.message}</FormHelperText>
-              )}
+              <FormControl fullWidth className="formInput">
+                <Controller
+                  name="shadeId"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableAutocomplete
+                      {...field}
+                      control={control}
+                      fieldName="shadeId"
+                      getOptionLabel={(option) =>
+                        `${option.shadeCode} - ${option.color}` || ""
+                      }
+                      dispatch={dispatch}
+                      searchAction={searchShade}
+                      options={allShade}
+                      valueResolver={() =>
+                        // Logic to resolve the initial value
+                        allShade?.find(
+                          (shade) => shade._id === watch("shadeId")
+                        )
+                      }
+                      setValue={setValue}
+                      errors={errors}
+                      label="Select Shade"
+                    />
+                  )}
+                />
+              </FormControl>
               <div className="d-flex justify-content-end w-100 mt-3">
                 <Button
                   variant="contained"
@@ -435,50 +347,35 @@ const AddRecipe = () => {
               <label className="formLabel mb-2">
                 Quality Code <span className="startColor">*</span>
               </label>
-              <Controller
-                name="qualityId"
-                control={control}
-                render={({ field: { onChange } }) => (
-                  <Autocomplete
-                    options={allQualities}
-                    getOptionLabel={(option) =>
-                      `${option.qualityCode} - ${option.qualityCodeManual}` ||
-                      ""
-                    }
-                    onInputChange={handleInputChange("quality")}
-                    isOptionEqualToValue={(option, value) =>
-                      option._id === value?._id
-                    }
-                    value={selectedIds.quality}
-                    loading={qualityLoading}
-                    onChange={handleSelectionChange("quality")}
-                    ListboxComponent={(props) => (
-                      <Listbox
-                        {...props}
-                        onListEnd={() => handleListEnd("quality")}
-                      />
-                    )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Quality Code"
-                        variant="outlined"
-                        fullWidth
-                        error={!!errors.qualityId}
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: <>{params.InputProps.endAdornment}</>,
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
-              {errors.qualityId && (
-                <FormHelperText error>
-                  {errors.qualityId.message}
-                </FormHelperText>
-              )}
+              <FormControl fullWidth className="formInput">
+                <Controller
+                  name="qualityId"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableAutocomplete
+                      {...field}
+                      control={control}
+                      fieldName="qualityId"
+                      getOptionLabel={(option) =>
+                        `${option.qualityCode} - ${option.qualityCodeManual}` ||
+                        ""
+                      }
+                      dispatch={dispatch}
+                      searchAction={searchQuality}
+                      options={allQualities}
+                      valueResolver={() =>
+                        // Logic to resolve the initial value
+                        allQualities?.find(
+                          (quality) => quality._id === watch("qualityId")
+                        )
+                      }
+                      setValue={setValue}
+                      errors={errors}
+                      label="Select Quality"
+                    />
+                  )}
+                />
+              </FormControl>
               <div className="d-flex justify-content-end w-100 mt-3">
                 <Button
                   disabled={user.role.key === USER}
@@ -504,49 +401,34 @@ const AddRecipe = () => {
               <label className="formLabel mb-2">
                 Customer <span className="startColor">*</span>
               </label>
-              <Controller
-                name="customerId"
-                control={control}
-                render={({ field: { onChange, value } }) => (
-                  <Autocomplete
-                    options={allCustomers}
-                    getOptionLabel={(option) =>
-                      `${option.name} - ${option.custCode}` || ""
-                    }
-                    onInputChange={handleInputChange("customer")}
-                    isOptionEqualToValue={(option, value) =>
-                      option._id === value?._id
-                    }
-                    value={selectedIds.customer}
-                    onChange={handleSelectionChange("customer")}
-                    loading={customerLoading}
-                    ListboxComponent={(props) => (
-                      <Listbox
-                        {...props}
-                        onListEnd={() => handleListEnd("customer")}
-                      />
-                    )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Customer"
-                        variant="outlined"
-                        fullWidth
-                        error={!!errors.customerId}
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: <>{params.InputProps.endAdornment}</>,
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
-              {errors.customerId && (
-                <FormHelperText error>
-                  {errors.customerId.message}
-                </FormHelperText>
-              )}
+              <FormControl fullWidth className="formInput">
+                <Controller
+                  name="customerId"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableAutocomplete
+                      {...field}
+                      control={control}
+                      fieldName="customerId"
+                      getOptionLabel={(option) =>
+                        `${option.name} - ${option.custCode}` || ""
+                      }
+                      dispatch={dispatch}
+                      searchAction={searchCustomer}
+                      options={allCustomers}
+                      valueResolver={() =>
+                        // Logic to resolve the initial value
+                        allCustomers?.find(
+                          (cust) => cust._id === watch("customerId")
+                        )
+                      }
+                      setValue={setValue}
+                      errors={errors}
+                      label="Select Customer"
+                    />
+                  )}
+                />
+              </FormControl>
               <div className="d-flex justify-content-end w-100 mt-3">
                 <Button
                   disabled={user.role.key === USER}
@@ -566,36 +448,37 @@ const AddRecipe = () => {
               <label className="formLabel mb-2">
                 Recipe Type <span className="startColor">*</span>
               </label>
-              <Controller
-                name="recipeType"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <FormControl fullWidth>
-                    <InputLabel id="recipeTypeLabel">
-                      Select Recipe Type
-                    </InputLabel>
-                    <Select
-                      {...field}
-                      labelId="recipeTypeLabel"
-                      label="Select Recipe Type"
-                      error={!!errors.recipeType}
-                      
-                    >
-                      {recipeTypes.map((type, index) => (
-                        <MenuItem key={index} value={type}>
-                          {type}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.recipeType && (
-                      <FormHelperText error>
-                        {errors.recipeType.message}
-                      </FormHelperText>
-                    )}
-                  </FormControl>
-                )}
-              />
+              <FormControl fullWidth className="formInput">
+                <Controller
+                  name="recipeType"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel id="recipeTypeLabel">
+                        Select Recipe Type
+                      </InputLabel>
+                      <Select
+                        {...field}
+                        labelId="recipeTypeLabel"
+                        label="Select Recipe Type"
+                        error={!!errors.recipeType}
+                      >
+                        {recipeTypes.map((type, index) => (
+                          <MenuItem key={index} value={type}>
+                            {type}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.recipeType && (
+                        <FormHelperText error>
+                          {errors.recipeType.message}
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </FormControl>
             </Grid>
 
             {/* ----------------------------------------------------------------------------------------- */}
@@ -620,6 +503,13 @@ const AddRecipe = () => {
                       onChange={(e) => {
                         field.onChange(e.target.value);
                         setSelectedTemplateId(e.target.value);
+                      }}
+                      MenuProps={{
+                        PaperProps: {
+                          style: {
+                            maxHeight: 200,
+                          },
+                        },
                       }}
                     >
                       {templates.map((template) => (
@@ -653,18 +543,18 @@ const AddRecipe = () => {
                 </Typography>
               ) : (
                 <RecipeTable
-                parentChemicals={parentChemicals}
-                handleAddChild={(index) => handleOpenModal("add", index)}
-                handleEditChildChemical={(parentIndex, childIndex) =>
-                  handleOpenModal("edit", parentIndex, childIndex)
-                }
-                handleAddSubChild={(parentIndex, childIndex) =>
-                  handleOpenModal("add", parentIndex, childIndex)
-                }
-                handleDeleteChildChemical={handleDeleteChildChemical}
-                handleDeleteParentChemical={handleDeleteParentChemical}
-                mode="add"
-              />              
+                  parentChemicals={parentChemicals}
+                  handleAddChild={(index) => handleOpenModal("add", index)}
+                  handleEditChildChemical={(parentIndex, childIndex) =>
+                    handleOpenModal("edit", parentIndex, childIndex)
+                  }
+                  handleAddSubChild={(parentIndex, childIndex) =>
+                    handleOpenModal("add", parentIndex, childIndex)
+                  }
+                  handleDeleteChildChemical={handleDeleteChildChemical}
+                  handleDeleteParentChemical={handleDeleteParentChemical}
+                  mode="add"
+                />
               )}
             </Grid>
 
@@ -687,7 +577,7 @@ const AddRecipe = () => {
         onClose={handleCloseModal}
         onSubmit={handle_Add_OR_EDIT_Child_Submit}
         chemicalForm={chemicalForm}
-        handleChemicalFormChange={handleChemicalFormChange}
+        handleChemicalFormChange={chemicalForm.setValue}
         allChemicals={allChemicals}
         ratioUnits={ratioUnits}
         mode={modalMode}

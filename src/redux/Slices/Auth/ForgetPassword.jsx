@@ -13,7 +13,6 @@ const initialState = {
 export const forgetPassword = createAsyncThunk(
   "auth/forgotPassword",
   async ( email , { rejectWithValue }) => {
-    console.log( email, "emaill")
     try {
       const response = await axiosInstance.post(`/auth/forgot-password`, {
         email

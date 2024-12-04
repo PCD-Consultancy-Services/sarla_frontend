@@ -148,12 +148,12 @@ const Login = () => {
 
                 <div className={styles.linkDiv}>
                   <div className="loogedIn">
-                    <Checkbox defaultChecked />
+                    {/* <Checkbox defaultChecked />
                     <label className={styles.label} htmlFor="">
                       Keep me logged in
-                    </label>
+                    </label> */}
                   </div>
-                  <div className={styles.forgetLink}>
+                  <div className={`${styles.forgetLink} mt-3`}>
                     <Link to={"/forgetPassword"}>Forgot password?</Link>
                   </div>
                 </div>

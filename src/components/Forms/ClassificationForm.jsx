@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { classificationSchema } from "../../validators/classificationValidation";
 import FormLayout from "../../layout/FormLayout";
+import Loader from "../Loader";
 
 const ClassifictionForm = ({
   onSubmit,
@@ -28,8 +29,20 @@ const ClassifictionForm = ({
       reset({
         name: initialData.name || "",
       });
+    }else{
+      reset({
+        name: "",
+      });
     }
   }, [initialData, reset]);
+
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <FormLayout

@@ -13,7 +13,7 @@ const initialState = {
   totalResults: 0,
   hasNextPage: null,
   hasPrevPage: null,
-  pageSize: 5,
+  pageSize: 10,
 };
 
 // fetch service
@@ -46,7 +46,7 @@ export const addService = createAsyncThunk(
   }
 );
 
-// Delete classification
+// Delete service
 
 export const deleteService = createAsyncThunk(
   "services/deleteService",
@@ -61,7 +61,7 @@ export const deleteService = createAsyncThunk(
   }
 );
 
-//update classification
+//update service
 export const updateService = createAsyncThunk(
   "services/updateService",
   async ({ id, payload }, { rejectWithValue }) => {
@@ -75,13 +75,32 @@ export const updateService = createAsyncThunk(
   }
 );
 
-// get classification
+// get service by id
 export const getServiceById = createAsyncThunk(
   "services/getService",
   async (id, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(`/service/${id}`);
       return response.data;
+    } catch (error) {
+      const errorPayload = generateErrorPayload(error);
+      return rejectWithValue(errorPayload);
+    }
+  }
+);
+
+// search service 
+export const searchService = createAsyncThunk(
+  "services/searchService",
+  async ({ pageSize = 10, name }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get(`/machine/service/search`,{
+        params : {
+          name,
+          pageSize
+        }
+      });
+      return response.data
     } catch (error) {
       const errorPayload = generateErrorPayload(error);
       return rejectWithValue(errorPayload);
@@ -170,6 +189,21 @@ const serviceSlice = createSlice({
         state.service = action.payload.data;
       })
       .addCase(getServiceById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // search service
+      .addCase(searchService.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(searchService.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.allServices = action.payload.data.results;
+      })
+      .addCase(searchService.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

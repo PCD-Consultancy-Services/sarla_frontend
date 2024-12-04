@@ -3,7 +3,10 @@ import * as yup from "yup";
 export const qualitySchema = yup.object().shape({
   qualityAbbr: yup.string().trim().required("Quality attribute is required"),
   qualityCode: yup.string().trim().required("Quality code is required"),
-  qualityCodeManual: yup.string().trim().required("Quality code manual is required"),
+  qualityCodeManual: yup
+    .string()
+    .trim()
+    .required("Quality code manual is required"),
   productCateg: yup.string().trim().required("Product category is required"),
   denierPrefix: yup.string().trim().required("Denier prefix is required"),
   denier: yup
@@ -21,16 +24,20 @@ export const qualitySchema = yup.object().shape({
     .typeError("Ply must be a number")
     .required("Ply numeric value is required"),
   process: yup.string().trim().required("Process is required"),
-  tpm: yup.number()
+  tpm: yup
+    .number()
     .typeError("TPM value must be a number")
     .required("TPM value is required"),
-  isLub: yup.boolean().required("Lubrication value is required"),
+  isLub: yup.boolean().oneOf([true], "Please confirm if it is lubricated."),
   lustre: yup.string().trim().required("Lustre is required"),
   shadePrefix: yup.string().trim().required("Shade prefix is required"),
-  shade: yup.string().trim().when("shadePrefix", {
-    is: "RW",
-    then: (schema) => schema.optional(),
-    otherwise: (schema) => schema.required("Shade value is required"),
-  }),
+  shade: yup
+    .string()
+    .trim()
+    .when("shadePrefix", {
+      is: "RW",
+      then: (schema) => schema.optional(),
+      otherwise: (schema) => schema.required("Shade value is required"),
+    }),
   serviceId: yup.string().trim().required("Service is required"),
 });

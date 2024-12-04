@@ -14,7 +14,7 @@ const initialState =  {
   totalResults: 0,
   hasNextPage : null, 
   hasPrevPage : null,
-  pageSize: 5, 
+  pageSize: 10, 
 };
 
 // fetch classification
@@ -96,6 +96,25 @@ export const getClassificationById = createAsyncThunk(
       console.log(error, "error from rtk ");
       const errorPayload = generateErrorPayload(error);
       return rejectWithValue(errorPayload);     
+    }
+  }
+);
+
+// search classification
+export const searchClassification = createAsyncThunk(
+  "services/searchClassification",
+  async ({ pageSize = 10, name }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get(`/chemical/classification/search`,{
+        params : {
+          q : name,
+          pageSize
+        }
+      });
+      return response.data
+    } catch (error) {
+      const errorPayload = generateErrorPayload(error);
+      return rejectWithValue(errorPayload);
     }
   }
 );
@@ -182,6 +201,20 @@ const classificationSlice = createSlice({
         state.classification = action.payload.data;
       })
       .addCase(getClassificationById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+       // search classsfication
+       .addCase(searchClassification.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(searchClassification.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.allClassification = action.payload.data.results;
+      })
+      .addCase(searchClassification.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

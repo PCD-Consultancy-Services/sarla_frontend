@@ -7,9 +7,9 @@
     height: 100%;
 }
 
-.page-list-table {
+/* .page-list-table {
     height: 100%;
-}
+} */
 
 
 .bg-img-div {
@@ -70,18 +70,3 @@
 
 }
 
-@media (min-height: 1350px) {
-
-    .page-list-table {
-        align-content: flex-start
-    }
-
-}
-
-/* @media (min-width: 1250px) {
-
-    .profile-box {
-        height: 100%;
-    }
-
-} */

@@ -1,154 +1,60 @@
 import React, { useEffect, useState } from "react";
-import SearchIcon from "@mui/icons-material/Search";
-import { textState } from "../../../redux/Slices/Theme/themeSetting";
 import { useDispatch, useSelector } from "react-redux";
-import headerURL from "../../headerURL";
+import { useForm, Controller } from "react-hook-form";
+import Autocomplete from "@mui/material/Autocomplete";
+import TextField from "@mui/material/TextField";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
   Button,
+  CircularProgress,
   Grid,
-  Modal,
-  TextField,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
 } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
+import headerURL from "../../headerURL";
+import InputAdornment from "@mui/material/InputAdornment";
+import {
+  fetchSlipNumbers,
+  fetchDispensingById,
+  clearDispensingDetails,
+} from "../../../redux/Slices/Execution/DispensingSlice";
+import { textState } from "../../../redux/Slices/Theme/themeSetting";
+import { useDebounce } from "../../../hooks/useDebounce";
+import DispensingDetails from "../../../components/Dispensing/DispensingDetails";
+import DispensingPDF from "../../../components/Dispensing/DispensingPDF";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 
 export default function Redyeing() {
-  const initialRows = [
-    {
-      id: "1",
-      step: "UNI",
-      chemicalName: "Maintain pH",
-      tank: "",
-      ratio: "",
-      ratioUnit: "",
-      quantity: "",
-      status: "",
-      mode: "",
-      actualWeights: "",
-      setWeight: "",
-      command: "",
-      reDispense: "",
-    },
-    {
-      id: "1.2",
-      step: "UNI",
-      chemicalName: "Darlene Robertson",
-      tank: "Task 3",
-      ratio: "a",
-      ratioUnit: "ST 3",
-      quantity: "Action 1",
-      status: "OID1",
-      mode: "5/27/15",
-      actualWeights: "PID1",
-      setWeight: "PID1",
-      command: "Action 1",
-      reDispense: "Action 2",
-    },
-    {
-      id: "1.3",
-      step: "UNI",
-      chemicalName: "Arlene McCoy",
-      tank: "Task 4",
-      ratio: "a",
-      ratioUnit: "ST 4",
-      quantity: "Action 1",
-      status: "OID1",
-      mode: "5/30/14",
-      actualWeights: "PID1",
-      setWeight: "PID1",
-      command: "Action 1",
-      reDispense: "Action 2",
-    },
-    {
-      id: "1.4",
-      step: "UNI",
-      chemicalName: "Dianne Russell",
-      tank: "Task 5",
-      ratio: "a",
-      ratioUnit: "ST 5",
-      quantity: "Action 1",
-      status: "OID1",
-      mode: "1/15/12",
-      actualWeights: "PID1",
-      setWeight: "PID1",
-      command: "Action 1",
-      reDispense: "Action 2",
-    },
-  ];
-
-  const columns = [
-    { field: "id", headerName: "Sr No.", minWidth: 120, flex: 0.5, headerAlign: "center", align: "center" },
-    { field: "step", headerName: "Step", minWidth: 120, flex: 0.5, headerAlign: "center", align: "center" },
-    {
-      field: "chemicalName",
-      headerName: "Chemical Name",
-      minWidth: 120,
-      flex: 0.5,
-      headerAlign: "center",
-      align: "center",
-      renderCell: (params) =>
-        params.value === "Maintain pH" ? (
-          <Button
-            variant="contained"
-            size="small"
-            onClick={() => handleMaintainPHClick(params.id)}
-          >
-            Maintain pH
-          </Button>
-        ) : (
-          params.value
-        ),
-    },
-    { field: "tank", headerName: "Tank", minWidth: 120, flex: 0.5, headerAlign: "center", align: "center" },
-    { field: "ratio", headerName: "Ratio", editable: true, minWidth: 150, flex: 0.5, headerAlign: "center", align: "center" },
-    { field: "ratioUnit", headerName: "Ratio Unit", minWidth: 150, flex: 0.5, headerAlign: "center", align: "center" },
-    { field: "quantity", headerName: "Quantity", minWidth: 150, flex: 0.5, headerAlign: "center", align: "center" },
-    { field: "status", headerName: "Status", minWidth: 150, flex: 0.5, headerAlign: "center", align: "center" },
-    { field: "mode", headerName: "Mode", minWidth: 150, flex: 0.5, headerAlign: "center", align: "center" },
-    { field: "actualWeights", headerName: "Actual Weights", minWidth: 150, flex: 0.5, headerAlign: "center", align: "center" },
-    { field: "setWeight", headerName: "Set Weight", minWidth: 150, flex: 0.5, headerAlign: "center", align: "center" },
-    {
-      field: "command",
-      headerName: "Command",
-      minWidth: 150,
-      flex: 0.5,
-      headerAlign: "center",
-      align: "center",
-      renderCell: (params) => (
-        <Button variant="contained" color="primary" onClick={() => handleCommandClick(params.id)}>
-          Dispense
-        </Button>
-      ),
-    },
-    {
-      field: "reDispense",
-      headerName: "Re-dispense",
-      minWidth: 150,
-      flex: 0.5,
-      headerAlign: "center",
-      align: "center",
-      renderCell: (params) => (
-        <Button variant="contained" color="primary" onClick={() => handleReDispenseClick(params.id)}>
-           Re-Dispense
-        </Button>
-      ),
-    },
-  ];
-
-  const [rows, setRows] = useState(initialRows);
-  const [isFormVisible, setFormVisible] = useState(false);
-  const [formData, setFormData] = useState({
-    chemicalName: "",
-    tank: "",
-    ratio: "",
-    ratioUnit: "",
-    quantity: "",
-  });
-  const [newRowId, setNewRowId] = useState(null);
-
-  const dispatch = useDispatch();
   const condition = useSelector((state) => state.theme.checkCondition);
   const sectionClass = condition.isOpen ? "page-padding" : "normal-padding";
+  const [isFocused, setIsFocused] = useState(false);
+  const [isSearchClicked, setisSearchClicked] = useState(false);
+
+  const { slipNumbers, dispensingDetails, loading } = useSelector(
+    (state) => state.dispensing
+  );
+
+  const dispatch = useDispatch();
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    control,
+    formState: { errors },
+  } = useForm();
+  const [selectedSlip, setSelectedSlip] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  const slipNumberWatch = watch("slipNumber");
+  const debouncedSlipNumber = useDebounce(slipNumberWatch, 300);
 
   useEffect(() => {
     dispatch(
@@ -159,299 +65,379 @@ export default function Redyeing() {
     );
   }, [dispatch]);
 
-  const handleFieldChange = (params) => {
-    const updatedRows = rows.map((row) =>
-      row.id === params.id ? { ...row, [params.field]: params.value } : row
-    );
-    setRows(updatedRows);
-  };
+  useEffect(() => {
+    dispatch(clearDispensingDetails());
+  }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
 
-  const handleAddClick = () => {
-    const newRow = {
-      id: (rows.length + 1).toString(),
-      step: "UNI",
-      chemicalName: formData.chemicalName,
-      tank: formData.tank,
-      ratio: formData.ratio,
-      ratioUnit: formData.ratioUnit,
-      quantity: formData.quantity,
-      status: "",
-      mode: "",
-      actualWeights: "",
-      setWeight: "",
-      command: "New Command",
-      reDispense: "New Re-dispense",
+  useEffect(() => {
+    const fetchInitialSlipNumbers = async () => {
+      try {
+        await dispatch(fetchSlipNumbers({}));
+      } catch (error) {
+        console.error("Failed to fetch initial slip numbers:", error);
+      } finally {
+        setInitialLoading(false);
+      }
     };
-    const updatedRows = [...rows];
-    updatedRows.splice(newRowId + 1, 0, newRow);
-    setRows(updatedRows);
-    setFormVisible(false);
-    setFormData({
-      chemicalName: "",
-      tank: "",
-      ratio: "",
-      ratioUnit: "",
-      quantity: "",
-    });
-    setNewRowId(null);
+
+    if (!slipNumbers.length) {
+      fetchInitialSlipNumbers();
+    } else {
+      setInitialLoading(false);
+    }
+  }, [dispatch, slipNumbers.length]);
+
+  useEffect(() => {
+    if (!initialLoading) {
+      if (debouncedSlipNumber && debouncedSlipNumber.trim() !== "") {
+        dispatch(fetchSlipNumbers({ q: debouncedSlipNumber }));
+      } else {
+        dispatch(fetchSlipNumbers({}));
+      }
+    }
+  }, [debouncedSlipNumber, dispatch, initialLoading]);
+
+  const onSearchSubmit = async () => {
+    if (selectedSlip) {
+      const response = await dispatch(fetchDispensingById(selectedSlip._id));
+      if (response?.payload?.success) {
+        setisSearchClicked(true);
+      }
+    } else {
+      console.error("No slip number selected");
+    }
   };
 
-  const handleMaintainPHClick = (id) => {
-    setNewRowId(id);
-    setFormVisible(true);
-  };
+  // const calculateQuantity = (child) => {
+  //   const ratio = child?.ratio;
+  //   const literage = dispensingDetails?.data?.machineId?.literage;
+  //   const batchWeight = dispensingDetails?.data?.batchWeight;
+  //   const ratioUnit = child.ratioUnit;
 
-  const handleCommandClick = (id) => {
-    console.log("Command button clicked for row ID:", id);
-    // Add your logic here for handling command button click
-  };
+  //   if (ratioUnit === "g/l") {
+  //     return ratio * literage;
+  //   } else if (ratioUnit === "%") {
+  //     return batchWeight * ratio * 10;
+  //   }
+  //   return "-";
+  // };
 
-  const handleReDispenseClick = (id) => {
-    console.log("Re-dispense button clicked for row ID:", id);
-    // Add your logic here for handling re-dispense button click
+  const calculateQuantity = (child) => {
+    const ratio = child?.ratio;
+    const literage = dispensingDetails?.data?.machineId?.literage;
+    const batchWeight = dispensingDetails?.data?.batchWeight;
+    const ratioUnit = child.ratioUnit;
+  
+    let result = "-";
+  
+    if (ratioUnit === "g/l") {
+      result = ratio * literage;
+    } else if (ratioUnit === "%") {
+      result = batchWeight * ratio * 10;
+    }
+  
+    // If the result is a number, format it to two decimal places
+    if (typeof result === "number") {
+      return result.toFixed(2);
+    }
+  
+    return result;
   };
-
-  const handleCloseModal = () => {
-    setFormVisible(false);
-    setFormData({
-      chemicalName: "",
-      tank: "",
-      ratio: "",
-      ratioUnit: "",
-      quantity: "",
-    });
-  };
-
+  
   return (
-    <section className={`sky-bg h-auto pb-5 addCustomerSection ${sectionClass}`}>
+    <section
+      className={`sky-bg ${
+        dispensingDetails ? "h-auto" : "vh-100"
+      }  pb-5 addCustomerSection ${sectionClass}`}
+    >
       <Box paddingTop={5}>
-        <Grid container spacing={2} bgcolor="white" borderRadius="15px" padding="20px">
-          <Grid item xs={12} className="d-flex align-items-center">
-            <label className="formLabel">Slip Number :</label>
-            <div className="search-inp ms-5">
-              <SearchIcon className="search-Icon" />
-              <input
-                type="text"
-                placeholder="Search"
-                className="border-0 bg-transparent p-2 no-outline"
-              />
+        <Grid
+          container
+          spacing={2}
+          bgcolor="white"
+          borderRadius="15px"
+          padding="20px"
+        >
+          <Grid
+            item
+            xs={12}
+            className="d-flex align-items-center justify-content-between"
+          >
+            <form
+              onSubmit={handleSubmit(onSearchSubmit)}
+              className="d-flex align-items-center"
+            >
+              <label className="formLabel">Slip Number :</label>
+              <div className="search-inp ms-5">
+                {initialLoading ? (
+                  <CircularProgress />
+                ) : (
+                  <Controller
+                    name="slipNumber"
+                    control={control}
+                    defaultValue=""
+                    render={({ field }) => (
+                      <Autocomplete
+                        freeSolo
+                        options={slipNumbers || []}
+                        getOptionLabel={(option) => option.slipNumber || ""}
+                        inputValue={field.value}
+                        onInputChange={(event, newValue) => {
+                          field.onChange(newValue);
+                          if (!newValue.trim()) {
+                            setisSearchClicked(false);
+                          }
+                        }}
+                        onChange={(event, value) => {
+                          setSelectedSlip(value);
+                          field.onChange(value ? value.slipNumber : "");
+                        }}
+                        sx={{ width: 300 }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            error={!!errors.slipNumber}
+                            helperText={errors.slipNumber?.message}
+                            fullWidth
+                            label="Search Slip Number"
+                            variant="outlined"
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
+                            InputProps={{
+                              ...params.InputProps,
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Box
+                                    sx={{
+                                      marginRight:
+                                        field.value || isFocused
+                                          ? "0px"
+                                          : "8px",
+                                      transition: "margin-right 0.3s",
+                                    }}
+                                  >
+                                    <SearchIcon
+                                      color={isFocused ? "primary" : ""}
+                                    />
+                                  </Box>
+                                </InputAdornment>
+                              ),
+                              endAdornment: (
+                                <React.Fragment>
+                                  {loading ? (
+                                    <CircularProgress
+                                      color="inherit"
+                                      size={20}
+                                    />
+                                  ) : null}
+                                  {params.InputProps.endAdornment}
+                                </React.Fragment>
+                              ),
+                            }}
+                            InputLabelProps={{
+                              shrink: field.value || isFocused ? true : false,
+                              style: {
+                                marginLeft: field.value || isFocused ? 0 : 30,
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    )}
+                  />
+                )}
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  className="px-4 ms-3"
+                  disabled={!selectedSlip}
+                >
+                  Search
+                </Button>
+              </div>
+            </form>
+            <div>
+              {isSearchClicked && dispensingDetails ? (
+                <PDFDownloadLink
+                  document={
+                    <DispensingPDF
+                      data={dispensingDetails}
+                      userName={"SPFL VAPIPRD-DYE/FMT/09/V1.0"}
+                    />
+                  }
+                  fileName="dispensing_details.pdf"
+                >
+                  {({ blob, url, loading, error }) =>
+                    loading ? (
+                      "Loading document..."
+                    ) : (
+                      <Button variant="contained" className="px-4 ms-2">
+                        Export to PDF
+                      </Button>
+                    )
+                  }
+                </PDFDownloadLink>
+              ) : (
+                <Button
+                  variant="contained"
+                  className="px-4 ms-2"
+                  disabled={!selectedSlip}
+                >
+                  Export
+                </Button>
+              )}
             </div>
-            <Button variant="contained" className="ms-5 w150">
-              Export To PDF
-            </Button>
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center">
-            <label className="formLabel w100">Machine :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Customer Name"
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center">
-            <label className="formLabel w100">Customer :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Customer Name"
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center">
-            <label className="formLabel w100">Shade No. :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Shade No."
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center">
-            <label className="formLabel w100">Card Batch :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Card Batch"
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center">
-            <label className="formLabel w100">Quality :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Quality"
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center">
-            <label className="formLabel w100">RM Lot No. :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="RM Lot No."
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center">
-            <label className="formLabel w100">Customer :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Customer Name"
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center gap-sm-4">
-            <label className="formLabel">Batch Weight :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Batch Weight"
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center gap-sm-4">
-            <label className="formLabel">Cones :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Cones"
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center gap-sm-4">
-            <label className="formLabel">Program No. :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Program No."
-              id="fullWidth"
-              variant="outlined"
-            />
-          </Grid>
-          <Grid item xs={6} className="d-flex align-items-center gap-sm-4">
-            <label className="formLabel">Recipe Type :</label>
-            <TextField
-              className="formInput w-50"
-              fullWidth
-              label="Recipe Type"
-              id="fullWidth"
-              variant="outlined"
-            />
           </Grid>
 
-          <div className="w-100 mt-5 pb-5">
-            <DataGrid
-              className="border-0 bg-transparent"
-              rows={rows}
-              columns={columns}
-              pageSize={5}
-              rowsPerPageOptions={[5, 10, 20]}
-             
-            />
-          </div>
+          {isSearchClicked ? (
+            <Grid className="mt-3" padding="20px" container spacing={2}>
+              <DispensingDetails details={dispensingDetails} />
+
+              <TableContainer className="mt-5" component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell className="fw-bold">Sr No.</TableCell>
+                      <TableCell className="fw-bold">Step</TableCell>
+                      <TableCell className="fw-bold">Chemical Name</TableCell>
+                      <TableCell className="fw-bold">Tank</TableCell>
+                      <TableCell className="fw-bold">Ratio</TableCell>
+                      <TableCell className="fw-bold">Ratio Unit</TableCell>
+                      <TableCell className="fw-bold">Quantity</TableCell>
+                      <TableCell className="fw-bold">Status</TableCell>
+                      <TableCell className="fw-bold">Mode</TableCell>
+                      <TableCell className="fw-bold">Actual Weights</TableCell>
+                      <TableCell className="fw-bold">Set Weight</TableCell>
+                      <TableCell className="fw-bold">Command</TableCell>
+                      <TableCell className="fw-bold">Re-dispense</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {dispensingDetails?.data.recipeId.parentChemicals.map(
+                      (parent, index) => (
+                        <React.Fragment key={index}>
+                          {/* Parent Chemical Row */}
+                          <TableRow style={{ backgroundColor: "#f0f0f0" }}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>{/* Step Value for Parent */}</TableCell>
+                            <TableCell>{parent.templateId.name}</TableCell>
+                            <TableCell>{/* Tank Value for Parent */}</TableCell>
+                            <TableCell>
+                              {/* Empty for Parent Chemicals */}
+                            </TableCell>
+                            <TableCell>
+                              {/* Empty for Parent Chemicals */}
+                            </TableCell>
+                            <TableCell>
+                              {/* Quantity Value for Parent */}
+                            </TableCell>
+                            <TableCell>
+                              {/* Status Value for Parent */}
+                            </TableCell>
+                            <TableCell>{/* Mode Value for Parent */}</TableCell>
+                            <TableCell>
+                              {/* Actual Weight for Parent */}
+                            </TableCell>
+                            <TableCell>{/* Set Weight for Parent */}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDispense(parent);
+                                }}
+                              >
+                                Dispense
+                              </Button>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleReDispense(parent);
+                                }}
+                              >
+                                Re-dispense
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                          {/* Child Chemicals Row */}
+                          {parent.childChemicals?.map((child, childIndex) => (
+                            <TableRow key={`${index}-${childIndex}`}>
+                              <TableCell>{`${index + 1}.${
+                                childIndex + 1
+                              }`}</TableCell>
+                              <TableCell>
+                                {/* Step Value for Child */}
+                              </TableCell>
+                              <TableCell>
+                                {child?.chemicalId.name || "-"}
+                              </TableCell>
+                              <TableCell>
+                              {child?.chemicalId.tankId.name || "-"}
+                                {/* Tank Value for Child */ }
+                              </TableCell>
+                              <TableCell>{child.ratio || "-"}</TableCell>
+                              <TableCell>{child?.ratioUnit || "-"}</TableCell>
+                              <TableCell>{calculateQuantity(child)}</TableCell>
+                              <TableCell>{/* Status for Child */}</TableCell>
+                              <TableCell>{/* Mode for Child */}</TableCell>
+                              <TableCell>
+                                {/* Actual Weight for Child */}
+                              </TableCell>
+                              <TableCell>
+                                {/* Set Weight for Child */}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="contained"
+                                  color="primary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDispense(child);
+                                  }}
+                                >
+                                  Dispense
+                                </Button>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="contained"
+                                  color="secondary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReDispense(child);
+                                  }}
+                                >
+                                  Re-dispense
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </React.Fragment>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Grid>
+          ) : (
+            <Box
+              component="section"
+              className="w-100 d-flex justify-content-center mt-5 p-3 rounded border"
+            >
+              <Typography className="text-danger">
+                Please Select and Search the Slip number to view the data
+              </Typography>
+            </Box>
+          )}
         </Grid>
       </Box>
-
-      <Modal
-        open={isFormVisible}
-        onClose={handleCloseModal}
-        aria-labelledby="maintain-ph-modal"
-        aria-describedby="maintain-ph-modal-description"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-            borderRadius: "8px",
-          }}
-        >
-          <h2 id="maintain-ph-modal">Maintain pH Details</h2>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Chemical Name"
-                variant="outlined"
-                name="chemicalName"
-                value={formData.chemicalName}
-                onChange={handleInputChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Tank"
-                variant="outlined"
-                name="tank"
-                value={formData.tank}
-                onChange={handleInputChange}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Ratio"
-                variant="outlined"
-                name="ratio"
-                value={formData.ratio}
-                onChange={handleInputChange}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Ratio Unit"
-                variant="outlined"
-                name="ratioUnit"
-                value={formData.ratioUnit}
-                onChange={handleInputChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Quantity"
-                variant="outlined"
-                name="quantity"
-                value={formData.quantity}
-                onChange={handleInputChange}
-              />
-            </Grid>
-            <Grid item xs={12} className="mt-3">
-              <Button variant="contained" color="primary" onClick={handleAddClick}>
-                Add
-              </Button>
-              <Button variant="outlined" color="primary" className="ms-2" onClick={handleCloseModal}>
-                Cancel
-              </Button>
-            </Grid>
-          </Grid>
-        </Box>
-      </Modal>
     </section>
   );
 }
-

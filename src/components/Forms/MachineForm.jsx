@@ -1,20 +1,18 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   TextField,
   Grid,
   CircularProgress,
   FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { machineSchema } from "../../validators/machineValidation";
 import FormLayout from "../../layout/FormLayout";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchService } from "../../redux/Slices/Master/ServiceSlice";
+import { fetchService, searchService } from "../../redux/Slices/Master/ServiceSlice";
+import SearchableAutocomplete from "../SearchableAutoComplete";
+import Loader from "../Loader";
 
 const MachineForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
   const dispatch = useDispatch();
@@ -26,6 +24,7 @@ const MachineForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
     watch,
     reset,
     control,
+    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -38,26 +37,38 @@ const MachineForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
     resolver: yupResolver(machineSchema),
   });
 
-  const nameValue = watch("name");
-  const nylonKgValue = watch("nylonKg");
-  const literageValue = watch("literage");
-  const nylonRatioValue = watch("nylonRatio");
+  // Load initial form data
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length) {
+      reset({
+        name: initialData?.name || "",
+        serviceId: initialData?.serviceId?._id || "",
+        nylonKg: initialData?.nylonKg || "",
+        literage: initialData?.literage || "",
+        nylonRatio: initialData?.nylonRatio || "",
+      });
+    } else {
+      reset({
+        name: "",
+        serviceId: "",
+        nylonKg: "",
+        literage: "",
+        nylonRatio: "",
+      });
+    }
+  }, [initialData, reset]);
 
   useEffect(() => {
     dispatch(fetchService({ pageSize: 10, page: 1 }));
   }, [dispatch]);
 
-  useEffect(() => {
-    if (initialData && Object.keys(initialData).length) {
-      reset({
-        name: initialData?.name || "",
-        serviceId: initialData?.serviceId._id || "",
-        nylonKg: initialData?.nylonKg || "",
-        literage: initialData?.literage || "",
-        nylonRatio: initialData?.nylonRatio || "",
-      });
-    }
-  }, [initialData, reset]);
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <FormLayout
@@ -65,6 +76,7 @@ const MachineForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
       onCancel={onCancel}
       loading={loading}
     >
+      
       <Grid item xs={6}>
         <label className="formLabel">
           Machine Name <span className="startColor">*</span>
@@ -78,39 +90,43 @@ const MachineForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
           disabled={loading}
           label="Enter Machine Name"
           variant="outlined"
-          InputLabelProps={{ shrink: !!nameValue }}
-          InputProps={{
-            endAdornment: loading && <CircularProgress size={20} />,
-          }}
+          InputLabelProps={{ shrink: !!watch("name") }}
         />
       </Grid>
+
       <Grid item xs={6}>
         <label className="formLabel">
           Service Name <span className="startColor">*</span>
         </label>
         <FormControl fullWidth className="formInput">
-          <InputLabel id="service-select-label">Select Service Name</InputLabel>
-          <Controller
+        <Controller
             name="serviceId"
             control={control}
             render={({ field }) => (
-              <Select
+              <SearchableAutocomplete
                 {...field}
-                // value={field.value}
-                error={!!errors.serviceId}
-                label="Select Service Name"
-              >
-                {allServices?.map((data) => (
-                  <MenuItem key={data._id} value={data._id}>
-                    {data.name}
-                  </MenuItem>
-                ))}
-              </Select>
+                control={control}
+                fieldName="serviceId"
+                dispatch={dispatch}
+                searchAction={searchService}
+                options={allServices}
+                loading={loading}
+                valueResolver={() =>
+                  // Logic to resolve the initial value
+                  allServices?.find((service) => service._id === watch("serviceId")) ||
+                  (watch("serviceId")
+                    ? {
+                        _id: watch("serviceId"),
+                        name: initialData?.serviceId?.name || "Original Service",
+                      }
+                    : null)
+                }
+                setValue={setValue}
+                errors={errors}
+                label="Select Service"
+              />
             )}
           />
-          {errors.serviceId && (
-            <FormHelperText error>{errors.serviceId.message}</FormHelperText>
-          )}
         </FormControl>
       </Grid>
 
@@ -126,7 +142,7 @@ const MachineForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
           fullWidth
           label="Enter Nylon Kg"
           variant="outlined"
-          InputLabelProps={{ shrink: !!nylonKgValue }}
+          InputLabelProps={{ shrink: !!watch("nylonKg") }}
           InputProps={{
             endAdornment: loading && <CircularProgress size={20} />,
           }}
@@ -146,7 +162,7 @@ const MachineForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
           label="Enter Literage"
           id="fullWidth"
           variant="outlined"
-          InputLabelProps={{ shrink: !!literageValue }}
+          InputLabelProps={{ shrink: !!watch("literage") }}
           InputProps={{
             endAdornment: loading && <CircularProgress size={20} />,
           }}
@@ -165,7 +181,7 @@ const MachineForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
           fullWidth
           label="Enter Nylon Ratio"
           variant="outlined"
-          InputLabelProps={{ shrink: !!nylonRatioValue }}
+          InputLabelProps={{ shrink: !!watch("nylonRatio") }}
           InputProps={{
             endAdornment: loading && <CircularProgress size={20} />,
           }}

@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 import { TextField, Grid, CircularProgress } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { tankValidationSchema } from "../../validators/tankValidation"
-import FormLayout from '../../layout/FormLayout';
+import { tankValidationSchema } from "../../validators/tankValidation";
+import FormLayout from "../../layout/FormLayout";
+import Loader from "../Loader";
 
 const TankForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
   const {
@@ -16,9 +17,9 @@ const TankForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
     resolver: yupResolver(tankValidationSchema),
   });
 
-  const nameValue = watch("name")
-  const solenoid_S_Value = watch("solenoid_S") 
-  const solenoid_L_Value = watch("solenoid_L") 
+  const nameValue = watch("name");
+  const solenoid_S_Value = watch("solenoid_S");
+  const solenoid_L_Value = watch("solenoid_L");
 
   useEffect(() => {
     if (initialData && Object.keys(initialData).length) {
@@ -27,11 +28,29 @@ const TankForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
         solenoid_S: initialData.solenoid_S || "",
         solenoid_L: initialData.solenoid_L || "",
       });
+    } else {
+      reset({
+        name: "",
+        solenoid_S: "",
+        solenoid_L: "",
+      });
     }
-  }, [initialData, reset])
+  }, [initialData, reset]);
+
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
-    <FormLayout onSubmit={handleSubmit(onSubmit)} onCancel={onCancel} loading={loading}>
+    <FormLayout
+      onSubmit={handleSubmit(onSubmit)}
+      onCancel={onCancel}
+      loading={loading}
+    >
       <Grid item xs={6}>
         <label className="formLabel">
           Tank Name <span className="startColor">*</span>
@@ -45,9 +64,9 @@ const TankForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
           disabled={loading}
           label="Enter Tank Name"
           variant="outlined"
-          InputLabelProps={{ shrink: !!nameValue }} 
+          InputLabelProps={{ shrink: !!nameValue }}
           InputProps={{
-            endAdornment: loading && <CircularProgress size={20} />, 
+            endAdornment: loading && <CircularProgress size={20} />,
           }}
         />
       </Grid>
@@ -62,9 +81,9 @@ const TankForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
           disabled={loading}
           label="Enter Solenoid_S"
           variant="outlined"
-          InputLabelProps={{ shrink: !!solenoid_S_Value }} 
+          InputLabelProps={{ shrink: !!solenoid_S_Value }}
           InputProps={{
-            endAdornment: loading && <CircularProgress size={20} />, 
+            endAdornment: loading && <CircularProgress size={20} />,
           }}
         />
       </Grid>
@@ -79,9 +98,9 @@ const TankForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
           disabled={loading}
           label="Enter Solenoid_L"
           variant="outlined"
-          InputLabelProps={{ shrink: !!solenoid_L_Value }} 
+          InputLabelProps={{ shrink: !!solenoid_L_Value }}
           InputProps={{
-            endAdornment: loading && <CircularProgress size={20} />, 
+            endAdornment: loading && <CircularProgress size={20} />,
           }}
         />
       </Grid>

@@ -13,7 +13,7 @@ const initialState = {
   totalResults: 0,
   hasNextPage: null,
   hasPrevPage: null,
-  pageSize: 5,
+  pageSize: 10,
 };
 
 // fetch qualities
@@ -100,11 +100,11 @@ export const updateQuality = createAsyncThunk(
 export const searchQuality = createAsyncThunk(
   "quality/searchQuality",
   async (params, { rejectWithValue }) => {
-    const { qualityCode, qualityCodeManual , page , pageSize } = params;
+    const { name, qualityCodeManual , page , pageSize } = params;
     try {
       const response = await axiosInstance.get("/quality/search", {
         params: {
-          qualityCode,
+          qualityCode : name,
           qualityCodeManual,
           page,
           pageSize

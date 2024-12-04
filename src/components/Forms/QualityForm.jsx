@@ -11,15 +11,17 @@ import {
   MenuItem,
   TextField,
   FormHelperText,
-   CircularProgress,
+  CircularProgress,
   Checkbox,
   FormControlLabel,
 } from "@mui/material";
 
 import FormLayout from "../../layout/FormLayout";
 import { generateQualityCode } from "../../utils/helper";
-import { fetchService } from "../../redux/Slices/Master/ServiceSlice";
+import { fetchService, searchService } from "../../redux/Slices/Master/ServiceSlice";
 import { fetchQualityUnits } from "../../redux/Slices/Master/QualityUnits";
+import SearchableAutocomplete from "../SearchableAutoComplete";
+import Loader from "../Loader";
 
 const QualityForm = ({
   onSubmit,
@@ -64,12 +66,12 @@ const QualityForm = ({
       ply: isEdit ? "" : 1,
 
       process: "",
-      tpm:  0,
+      tpm: 0,
 
-      isLub : "",
+      isLub: false,
 
       serviceId: "",
-      lustre: isEdit ?  "" : "SD",
+      lustre: isEdit ? "" : "SD",
 
       shadePrefix: isEdit ? "" : "RW",
       shade: "",
@@ -82,8 +84,6 @@ const QualityForm = ({
     },
     resolver: yupResolver(qualitySchema),
   });
-
-  // console.log(initialData);
 
   useEffect(() => {
     dispatch(fetchService({ pageSize: 5, page: 1 }));
@@ -111,6 +111,26 @@ const QualityForm = ({
         shade: initialData?.shade || "",
         serviceId: initialData?.serviceId?._id || "",
       });
+    } else {
+      reset({
+        qualityAbbr: isEdit ? "" : "1ST", // select quality
+        qualityCode: "", // disabled field
+        qualityCodeManual: "",
+        productCateg: "",
+        denierPrefix, // non changeable prefix
+        denier: isEdit ? "" : 1,
+        filamentPrefix, // non changeable prefix
+        filament: isEdit ? "" : 1,
+        plyPrefix, // non changeable prefix
+        ply: isEdit ? "" : 1,
+        process: "",
+        tpm: 0,
+        isLub: false,
+        lustre: isEdit ? "" : "SD",
+        shadePrefix: isEdit ? "" : "RW",
+        shade: "",
+        serviceId: "",
+      });
     }
   }, [isEdit, initialData, reset]);
 
@@ -126,7 +146,6 @@ const QualityForm = ({
     "process",
     "tpm",
     "isLub",
-
   ]);
 
   useEffect(() => {
@@ -166,6 +185,14 @@ const QualityForm = ({
     if (!["TW", "HB", "TWHK"].includes(process)) setValue("tpm", 0);
     if (shadePrefix === "RW") setValue("shade", "");
   }, watchedFields);
+
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <FormLayout
@@ -347,7 +374,7 @@ const QualityForm = ({
           error={!!errors.tpm}
           helperText={errors.tpm?.message}
           disabled={!["TW", "HB", "TWHK"].includes(watch("process"))}
-          InputLabelProps={{ shrink: !!watch("process") }}
+          InputLabelProps={{ shrink: true }}
           InputProps={{
             endAdornment: loading && <CircularProgress size={20} />,
           }}
@@ -362,12 +389,19 @@ const QualityForm = ({
               name="isLub"
               control={control}
               render={({ field }) => (
-                <Checkbox {...field} checked={field.value} />
+                <Checkbox
+                  {...field}
+                  checked={field.value}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                />
               )}
             />
           }
           label="Is Lubricated?"
         />
+        {errors.isLub && (
+          <FormHelperText error>{errors.isLub.message}</FormHelperText>
+        )}
       </Grid>
 
       {/* Service Name and Lustre */}
@@ -375,24 +409,35 @@ const QualityForm = ({
         <label className="formLabel">
           Service Name <span className="startColor">*</span>
         </label>
-        <FormControl className="mt-3" fullWidth error={!!errors.serviceId}>
-          <InputLabel>Service Name</InputLabel>
-          <Controller
+        <FormControl fullWidth className="formInput">
+        <Controller
             name="serviceId"
             control={control}
             render={({ field }) => (
-              <Select {...field} label="Service Name">
-                {allServices?.map((service) => (
-                  <MenuItem key={service._id} value={service._id}>
-                    {service.name}
-                  </MenuItem>
-                ))}
-              </Select>
+              <SearchableAutocomplete
+                {...field}
+                control={control}
+                fieldName="serviceId"
+                dispatch={dispatch}
+                searchAction={searchService}
+                options={allServices}
+                loading={loading}
+                valueResolver={() =>
+                  // Logic to resolve the initial value
+                  allServices?.find((service) => service._id === watch("serviceId")) ||
+                  (watch("serviceId")
+                    ? {
+                        _id: watch("serviceId"),
+                        name: initialData?.serviceId?.name || "Original Service",
+                      }
+                    : null)
+                }
+                setValue={setValue}
+                errors={errors}
+                label="Select Service"
+              />
             )}
           />
-          {errors.serviceId && (
-            <FormHelperText>{errors.serviceId.message}</FormHelperText>
-          )}
         </FormControl>
       </Grid>
       <Grid item xs={6}>
@@ -457,8 +502,8 @@ const QualityForm = ({
           error={!!errors.shade}
           helperText={errors.shade?.message}
           disabled={watch("shadePrefix") === "RW"}
-           InputLabelProps={{ shrink: !!watch("shade") }}
-           InputProps={{
+          InputLabelProps={{ shrink: !!watch("shade") }}
+          InputProps={{
             endAdornment: loading && <CircularProgress size={20} />,
           }}
         />
