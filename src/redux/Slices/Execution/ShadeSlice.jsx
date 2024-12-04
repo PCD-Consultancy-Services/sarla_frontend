@@ -13,7 +13,7 @@ const initialState = {
   totalResults: 0,
   hasNextPage: null,
   hasPrevPage: null,
-  pageSize: 5,
+  pageSize: 10,
 };
 
 // fetch Shade
@@ -21,9 +21,9 @@ export const fetchShade = createAsyncThunk(
   "shade/fetchShade",
   async ({ pageSize, page }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.get(
-        `/shade/?pageSize=${pageSize}&page=${page}`
-      );
+      const response = await axiosInstance.get("/shade", {
+        params: { pageSize, page },
+      });
       return response.data;
     } catch (error) {
       const errorPayload = generateErrorPayload(error);
@@ -31,6 +31,7 @@ export const fetchShade = createAsyncThunk(
     }
   }
 );
+
 
 // create Shade
 export const createShade = createAsyncThunk(
@@ -92,11 +93,11 @@ export const updateShade = createAsyncThunk(
 export const searchShade = createAsyncThunk(
   "shade/searchShade",
   async (params, { rejectWithValue }) => {
-    const { shadeCode, color , page , pageSize } = params;
+    const { name , color , page , pageSize } = params;
     try {
       const response = await axiosInstance.get("/shade/search", {
         params: {
-          shadeCode,
+          shadeCode : name,
           color,
           page,
           pageSize

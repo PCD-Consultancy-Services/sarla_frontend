@@ -3,7 +3,6 @@ import { Grid, Typography } from "@mui/material";
 import formatDate from "../../../utils/formatDate";
 
 const DispensingDetails = ({ details }) => {
-  // console.log(details);
   const fields = [
     { field: "PI_No", label: "PI No.", value: details?.data?.piNo || "-" },
     {

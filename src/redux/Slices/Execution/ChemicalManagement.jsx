@@ -6,6 +6,12 @@ const initialState = {
   parentChemicals: [],
   loading: false,
   error: null,
+
+  // for duplicate special shade , quality , recipe type and customer id  
+  recipeType : "",
+  shadeId: "",
+  qualityId : "",
+  customerId : ""
 };
 
 export const fetchTemplateById = createAsyncThunk(
@@ -21,6 +27,16 @@ export const fetchTemplateById = createAsyncThunk(
     }
   }
 );
+
+export const getReceipeForDuplicateAdd = createAsyncThunk("recipes/getReceipeForDuplicateAdd", async (id) => {
+  try {
+    const response = await axiosInstance.get(`/recipe/${id}`);
+    return response.data;
+  } catch (error) {
+    const errorPayload = generateErrorPayload(error);
+    return rejectWithValue(errorPayload);
+  }
+});
 
 const templateManagement = createSlice({
   name: "templateManagement",
@@ -111,6 +127,7 @@ const templateManagement = createSlice({
         state.loading = false;
         
         // Merge the new parent chemical with the existing ones
+        
         state.parentChemicals.push({
           _id: action.payload.data._id,
           name: action.payload.data.name,
@@ -127,7 +144,43 @@ const templateManagement = createSlice({
       .addCase(fetchTemplateById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
+      })
+
+      // 
+
+      .addCase(getReceipeForDuplicateAdd.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(getReceipeForDuplicateAdd.fulfilled, (state, action) => {
+        state.loading = false;
+    
+        console.log(action, "what is the action");
+        state.recipeType = action.payload.data.recipeType;
+        state.shadeId = action.payload.data.shadeId;
+        state.qualityId = action.payload.data.qualityId
+        state.customerId = action.payload.data.customerId
+        // Merge the new parent chemical with the existing ones
+        action.payload.data.parentChemicals.forEach((parentChemical) => {
+            state.parentChemicals.push({
+                _id: parentChemical.templateId._id, // Parent ID
+                name: parentChemical.templateId.name, // Parent Name
+                key: parentChemical.templateId._id.key, // Parent Key
+                childChemicals: parentChemical.childChemicals.map((childChemical) => ({
+                    ...childChemical,
+                    chemicalId: childChemical.chemicalId._id,
+                    name: childChemical.chemicalId.name,
+                })),
+            });
+        });
+    })
+      
+      .addCase(getReceipeForDuplicateAdd.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      
   },
 });
 

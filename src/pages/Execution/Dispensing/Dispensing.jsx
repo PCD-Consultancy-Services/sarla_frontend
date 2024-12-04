@@ -264,7 +264,7 @@ export default function Dispensing() {
                   document={
                     <DispensingPDF
                       data={dispensingDetails}
-                      userName={"SPFL VAPUPRD-DYE/FMT/09/V1.0"}
+                      userName={"SPFL VAPIPRD-DYE/FMT/09/V1.0"}
                     />
                   }
                   fileName="dispensing_details.pdf"
@@ -379,7 +379,8 @@ export default function Dispensing() {
                                 {child?.chemicalId.name || "-"}
                               </TableCell>
                               <TableCell>
-                                {/* Tank Value for Child */ "-"}
+                              {child?.chemicalId.tankId.name || "-"}
+                                {/* Tank Value for Child */ }
                               </TableCell>
                               <TableCell>{child.ratio || "-"}</TableCell>
                               <TableCell>{child?.ratioUnit || "-"}</TableCell>

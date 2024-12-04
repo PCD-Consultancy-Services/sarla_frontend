@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { CustomerValidationSchema } from "../../validators/customerValidation";
 import FormLayout from "../../layout/FormLayout";
+import Loader from "../Loader";
 
 const CustomerForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
   const {
@@ -23,10 +24,23 @@ const CustomerForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
     if (initialData && Object.keys(initialData).length) {
       reset({
         name: initialData.name || "",
-        custCode : initialData.custCode || "",
+        custCode: initialData.custCode || "",
+      });
+    } else {
+      reset({
+        name: "",
+        custCode: "",
       });
     }
   }, [initialData, reset]);
+
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <FormLayout

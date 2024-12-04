@@ -27,6 +27,7 @@ export const ChangePassword = "change-password"
 export const ViewAll = "view-all"
 export const AddNew = "add-new"
 export const Edit = "edit"
+export const Duplicate = "duplicate"
 
 // common page names
 

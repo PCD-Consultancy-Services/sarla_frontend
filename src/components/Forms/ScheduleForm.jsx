@@ -25,17 +25,23 @@ import { scheduleValidationSchema } from "../../validators/scheduleValidation";
 import { removeDuplicates } from "../../utils/removeDuplicateData";
 import {
   fetchCardBatches,
-  fetchMachines,
 } from "../../redux/Slices/Execution/scheduleSlice";
 import FormLayout from "../../layout/FormLayout";
 import { getSlipNumByCardBatch } from "../../redux/Slices/Execution/SlipNumSlice";
+import {
+  searchMacineForExecution,
+} from "../../redux/Slices/Master/MachineSlice";
+import SearchableAutocomplete from "../SearchableAutoComplete";
+import { fetchShade, searchShade } from "../../redux/Slices/Execution/ShadeSlice";
+import Loader from "../Loader";
 
-const ScheduleForm = ({ onSubmit, initialValues = {} , onCancel }) => {
+const ScheduleForm = ({ onSubmit, initialValues = {}, onCancel }) => {
   const dispatch = useDispatch();
 
-  const { loading, machineNames, cardBatches } = useSelector(
-    (state) => state.schedule
-  );
+  const { loading, cardBatches } = useSelector((state) => state.schedule);
+
+  const { allMachine } = useSelector((state) => state.machine);
+  const { allShade } = useSelector((state) => state.shade);
 
   const {
     loading: isSlipLoading,
@@ -62,11 +68,11 @@ const ScheduleForm = ({ onSubmit, initialValues = {} , onCancel }) => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      PINo : "",
-      machineId : "",
-      cardBatch : "",
+      PINo: "",
+      machineId: "",
+      cardBatch: "",
       shadeId: "",
-      qualityId : "",
+      qualityId: "",
       customerId: "",
       recipeType: "",
       finishMaterial: "",
@@ -75,16 +81,19 @@ const ScheduleForm = ({ onSubmit, initialValues = {} , onCancel }) => {
       batchWt: "",
       cones: "",
       remarks: "",
-      programNum: ""
-      
+      programNum: "",
     },
     resolver: yupResolver(scheduleValidationSchema),
   });
 
   useEffect(() => {
-    dispatch(fetchMachines());
+    // dispatch(fetchMachines());
     dispatch(fetchCardBatches());
-    dispatch(fetchShadeForSchedule({}));
+    // dispatch(fetchShadeForSchedule({}));
+
+    // come from machine slice
+    dispatch(searchMacineForExecution({}));
+    dispatch(searchShade({}))
   }, [dispatch]);
 
   useEffect(() => {
@@ -107,6 +116,25 @@ const ScheduleForm = ({ onSubmit, initialValues = {} , onCancel }) => {
         remarks: initialValues?.remark,
         programNum: initialValues?.programNo,
       });
+    } else {
+      reset({
+        PINo: "",
+        machineId: "",
+        cardBatch: "",
+        RMLotNum: "",
+        finishMaterial: "",
+        shadeId: "",
+        qualityId: "",
+        customerId: "",
+        recipeType: "",
+        // recipeId: schedule?.recipeId,
+        rmMaterial: "",
+        slipNumber: "",
+        batchWt: "",
+        cones: "",
+        remarks: "",
+        programNum: "",
+      });
     }
   }, [initialValues, reset]);
   // console.log(initialValues)
@@ -115,7 +143,7 @@ const ScheduleForm = ({ onSubmit, initialValues = {} , onCancel }) => {
   const qualityId = watch("qualityId");
   const customerId = watch("customerId");
   const recipeType = watch("recipeType");
-  const selectedBatch = watch("cardBatch");
+  // const selectedBatch = watch("cardBatch");
 
   // useEffect(() => {
   //   if (selectedBatch) {
@@ -132,14 +160,12 @@ const ScheduleForm = ({ onSubmit, initialValues = {} , onCancel }) => {
       }
     }
   };
-  
-console.log(slipNumber)
-   // useEffect(() => {
+
+  // useEffect(() => {
   //   if (!slipNumber) {
   //     fetchSlipNumber();
   //   }
   // }, [selectedBatch, dispatch, slipNumber, setValue]);
-
 
   useEffect(() => {
     if (shadeId) {
@@ -158,9 +184,61 @@ console.log(slipNumber)
     }
   }, [shadeId, qualityId, customerId, recipeType, dispatch]);
 
+  useEffect(() => {
+    // Cascading resets based on dependent field selections
+    if (!shadeId) {
+      // If no shade is selected, reset quality, customer, and recipe type
+      setValue('qualityId', '');
+      setValue('customerId', '');
+      setValue('recipeType', '');
+      
+      // Clear fetched data for dependent fields
+      dispatch(fetchQualityForSchedule({})); // Reset qualities
+      dispatch(fetchCustomerForSchedule({})); // Reset customers
+      dispatch(fetchRecipeTypeForSchedule({})); // Reset recipe types
+    }
+    
+    if (shadeId && !qualityId) {
+      // If shade is selected but no quality, reset customer and recipe type
+      setValue('customerId', '');
+      setValue('recipeType', '');
+      
+      // Fetch qualities based on shade
+      dispatch(fetchQualityForSchedule({ shadeId }));
+      
+      // Clear fetched data for dependent fields
+      dispatch(fetchCustomerForSchedule({}));
+      dispatch(fetchRecipeTypeForSchedule({}));
+    }
+    
+    if (shadeId && qualityId && !customerId) {
+      // If shade and quality are selected but no customer, reset recipe type
+      setValue('recipeType', '');
+      
+      // Fetch customers based on shade and quality
+      dispatch(fetchCustomerForSchedule({ shadeId, qualityId }));
+      
+      // Clear fetched recipe types
+      dispatch(fetchRecipeTypeForSchedule({}));
+    }
+    
+    // Original fetching logic
+    if (shadeId && qualityId && customerId) {
+      dispatch(fetchRecipeTypeForSchedule({ shadeId, qualityId, customerId }));
+    }
+  }, [shadeId, qualityId, customerId, dispatch, setValue]);
+
   const uniqueQualities = removeDuplicates(qualities || [], "qualityId");
   const uniqueCustomers = removeDuplicates(customers || [], "customerId");
   const uniqueShades = removeDuplicates(shades || [], "shadeId");
+
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
 
   return (
     <FormLayout
@@ -192,9 +270,39 @@ console.log(slipNumber)
           <label className="formLabel">
             Select Machine <span className="startColor">*</span>
           </label>
-          <FormControl className="mt-3" fullWidth error={!!errors.machineId}>
-            <InputLabel>Select Machine</InputLabel>
+          <FormControl fullWidth className="formInput">
             <Controller
+              name="machineId"
+              control={control}
+              render={({ field }) => (
+                <SearchableAutocomplete
+                  {...field}
+                  control={control}
+                  fieldName="machineId"
+                  dispatch={dispatch}
+                  searchAction={searchMacineForExecution}
+                  options={allMachine}
+                  loading={loading}
+                  valueResolver={() =>
+                    // Logic to resolve the initial value
+                    allMachine?.find((mac) => mac._id === watch("machineId")) ||
+                    (watch("machineId")
+                      ? {
+                          _id: watch("machineId"),
+                          name:
+                            initialValues?.machineId?.name ||
+                            "Original Service",
+                        }
+                      : null)
+                  }
+                  setValue={setValue}
+                  errors={errors}
+                  label="Select Machine"
+                />
+              )}
+            />
+          </FormControl>
+          {/* <Controller
               name="machineId"
               control={control}
               render={({ field }) => (
@@ -213,8 +321,7 @@ console.log(slipNumber)
             />
             {errors.machineId && (
               <FormHelperText>{errors.machineId.message}</FormHelperText>
-            )}
-          </FormControl>
+            )} */}
         </Grid>
 
         <Grid item xs={6}>
@@ -228,15 +335,16 @@ console.log(slipNumber)
               control={control}
               render={({ field }) => (
                 <Select
-                 {...field}
-                 onChange={(e) => {
-                  // Update the selected value in form state
-                  field.onChange(e);
-                  // Set selected batch and call the fetchSlipNumber function
-                  const selectedBatch = e.target.value;
-                  fetchSlipNumber(selectedBatch); // Pass selectedBatch to your function
-                }}
-                 label="Select Card Batch">
+                  {...field}
+                  onChange={(e) => {
+                    // Update the selected value in form state
+                    field.onChange(e);
+                    // Set selected batch and call the fetchSlipNumber function
+                    const selectedBatch = e.target.value;
+                    fetchSlipNumber(selectedBatch); // Pass selectedBatch to your function
+                  }}
+                  label="Select Card Batch"
+                >
                   {cardBatches?.map((batch, index) => (
                     <MenuItem key={index} value={batch}>
                       {batch}
@@ -274,7 +382,41 @@ console.log(slipNumber)
           <label className="formLabel">
             Select Shade <span className="startColor">*</span>
           </label>
-          <Controller
+          <FormControl fullWidth className="formInput">
+            <Controller
+              name="serviceId"
+              control={control}
+              render={({ field }) => (
+                <SearchableAutocomplete
+                  {...field}
+                  control={control}
+                  fieldName="shadeId"
+                  dispatch={dispatch}
+                  searchAction={searchShade}
+                  options={allShade}
+                  getOptionLabel={(option) =>
+                    `${option.shadeCode} - ${option.color}` || ""
+                  }
+                  loading={loading}
+                  valueResolver={() =>
+                    // Logic to resolve the initial value
+                    allShade?.find((sh) => sh._id === watch("shadeId")) ||
+                    (watch("shadeId")
+                      ? {
+                          _id: initialValues?.shadeId?._id,
+                          shadeCode: initialValues?.shadeId?.shadeCode,
+                          color: initialValues?.shadeId?.color,
+                        }
+                      : null)
+                  }
+                  setValue={setValue}
+                  errors={errors}
+                  label="Select Shade"
+                />
+              )}
+            />
+          </FormControl>
+          {/* <Controller
             name="shadeId"
             control={control}
             render={({ field }) => (
@@ -303,7 +445,7 @@ console.log(slipNumber)
                 }
               />
             )}
-          />
+          /> */}
         </Grid>
 
         <Grid item xs={6}>
@@ -354,7 +496,7 @@ console.log(slipNumber)
                 }
                 value={
                   qualities?.find(
-                    (quality) => quality.qualityId?._id === field.value
+                    (quality) => quality?.qualityId?._id === field.value
                   ) || null
                 }
                 disabled={!shadeId}
@@ -392,7 +534,7 @@ console.log(slipNumber)
                 }
                 value={
                   customers?.find(
-                    (cust) => cust.customerId?._id === field.value
+                    (cust) => cust?.customerId?._id === field.value
                   ) || null
                 }
                 disabled={!qualityId || isRecipeLoading}

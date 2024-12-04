@@ -13,7 +13,7 @@ const initialState = {
   totalResults: 0,
   hasNextPage: null,
   hasPrevPage: null,
-  pageSize: 5,
+  pageSize: 10,
 };
 
 // fetch users

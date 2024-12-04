@@ -13,7 +13,7 @@ const initialState = {
   totalResults: 0,
   hasNextPage: null,
   hasPrevPage: null,
-  pageSize: 5,
+  pageSize: 10,
 };
 
 // fetch Master Template
@@ -99,6 +99,9 @@ export const getMasterTemplateById = createAsyncThunk(
   }
 );
 
+// search chemical for master-template & template_config(edit-mode)
+
+
 const masterTemplateSlice = createSlice({
   name: "masterTemplate",
   initialState,
@@ -179,7 +182,8 @@ const masterTemplateSlice = createSlice({
       .addCase(getMasterTemplateById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      });
+      })
+
   },
 });
 

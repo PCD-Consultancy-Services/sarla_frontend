@@ -1,5 +1,4 @@
 import {
-  Autocomplete,
   Box,
   Button,
   CircularProgress,
@@ -8,10 +7,7 @@ import {
   Grid,
   InputLabel,
   MenuItem,
-  Modal,
   Select,
-  TextField,
-  Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,7 +15,6 @@ import headerURL from "../../headerURL";
 import { textState } from "../../../redux/Slices/Theme/themeSetting";
 import URL from "../../../routes/URLs";
 import { useNavigate, useParams } from "react-router-dom";
-import { useDebounce } from "../../../hooks/useDebounce";
 import { searchShade } from "../../../redux/Slices/Execution/ShadeSlice";
 import { searchQuality } from "../../../redux/Slices/Master/QualitySlice";
 import { searchCustomer } from "../../../redux/Slices/Master/CustomerSlice";
@@ -36,7 +31,6 @@ import {
   fetchTemplates,
   getReceipe,
   updateChildChemicalWhileUpdate,
-  updateParentChemicalWhileUpdate,
   updateReceipe,
 } from "../../../redux/Slices/Execution/RecipeSlice";
 import { fetchChemicals } from "../../../redux/Slices/Master/ChemicalSlice";
@@ -44,8 +38,10 @@ import { fetchChemicalsUnits } from "../../../redux/Slices/Master/ChemicalUnitsS
 import Swal from "sweetalert2";
 import { DeleteConfirmationToaster } from "../../../utils/toasterUtil";
 import { fetchTemplateById } from "../../../redux/Slices/Execution/ChemicalManagement";
-import Listbox from "../../../components/InfiniteScroll";
 import RecipeTable from "../../../components/Recipe/RecipeTable";
+import SearchableAutocomplete from "../../../components/SearchableAutoComplete";
+import ChemicalModal from "../../../components/Recipe/ChemicalModal";
+import { ChemicalModalSchema } from "../../../validators/chemicalModal.validations";
 
 const EditRecipe = () => {
   const condition = useSelector((state) => state.theme.checkCondition);
@@ -63,15 +59,24 @@ const EditRecipe = () => {
   const { ratioUnits } = useSelector((state) => state.chemicalUnits);
 
   const { allChemicals } = useSelector((state) => state.chemical);
-  const [isEditingChild, setisEditingChild] = useState(false);
   const [selectedParent, setSelectedParent] = useState(null);
 
   const [selectedTemplate, setSelectedTemplate] = useState();
 
-  const [chemicalForm, setchemicalForm] = useState({
-    chemicalId: "",
-    ratio: "",
-    ratioUnit: "",
+  const { allShade } = useSelector((state) => state.shade);
+
+  const { allQualities } = useSelector((state) => state.quality);
+
+  const { allCustomers } = useSelector((state) => state.customer);
+
+  const chemicalForm = useForm({
+    defaultValues: {
+      chemicalId: "",
+      name: "",
+      ratio: "",
+      ratioUnit: "",
+    },
+    resolver: yupResolver(ChemicalModalSchema),
   });
 
   useEffect(() => {
@@ -84,39 +89,36 @@ const EditRecipe = () => {
 
     dispatch(fetchRecipesUnits());
     dispatch(fetchTemplates());
-    dispatch(fetchChemicals({}));
-    dispatch(fetchChemicalsUnits({ }));
-    // dispatch(fetchChemicals({ pageSize: 10, page: 1 }));
+    // dispatch(fetchChemicals({}));
+    dispatch(fetchChemicalsUnits({}));
+    dispatch(fetchChemicals({ pageSize: 10, page: 1 }));
     // dispatch(fetchChemicalsUnits({ pageSize: 10, page: 1 }));
     dispatch(getReceipe(id));
   }, [dispatch]);
 
-  const handleChemicalFormChange = (e) => {
-    setchemicalForm({
-      ...chemicalForm,
-      [e.target.name]: e.target.value,
-    });
-  };
-
   const handleAddChild = (parent) => {
+    chemicalForm.reset({
+      chemicalId: "",
+      name: "",
+      ratio: "",
+      ratioUnit: "",
+    });
     setSelectedParent(parent);
     setModelOpen(true);
+    dispatch(fetchChemicals({}));
   };
 
-  const handleAddChildSubmit = async (e) => {
-    e.preventDefault();
+  const handleAddChildSubmit = async (data) => {
     setModelOpen(false);
-
     const payload = {
       id,
       parent_id: selectedParent?.templateId._id,
       payload: {
-        chemicalId: chemicalForm?.chemicalId,
-        ratio: chemicalForm?.ratio,
-        ratioUnit: chemicalForm?.ratioUnit,
+        chemicalId: data?.chemicalId,
+        ratio: data?.ratio,
+        ratioUnit: data?.ratioUnit,
       },
     };
-
     const response = await dispatch(addChildChemicalWhileUpdate(payload));
     if (response.error) {
       Swal.fire({
@@ -132,48 +134,34 @@ const EditRecipe = () => {
       });
     }
 
-    setchemicalForm({ chemicalId: "", ratio: "", ratioUnit: "" });
+    chemicalForm.reset({ chemicalId: "", name: "", ratio: "", ratioUnit: "" });
   };
 
   const [modelOpen, setModelOpen] = useState(false);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingChemicalForm, setEditingChemicalForm] = useState({
-    chemicalId: "",
-    ratio: "",
-    ratioUnit: "",
-  });
-
-  const handleEditChemicalFormChange = (e) => {
-    const { name, value } = e.target;
-    setEditingChemicalForm((prevForm) => ({
-      ...prevForm,
-      [name]: value,
-    }));
-  };
 
   const handleEditChildChemical = (parent, child) => {
     setSelectedParent(parent);
-    setEditingChemicalForm({
+    chemicalForm.reset({
       chemicalId: child?.chemicalId?._id,
+      name: child?.chemicalId?.name,
       ratio: child?.ratio,
       ratioUnit: child?.ratioUnit,
     });
     setIsEditModalOpen(true);
-    setisEditingChild(true);
   };
 
-  const handleUpdateChildChemical = async (e) => {
-    e.preventDefault();
+  const handleUpdateChildChemical = async (data) => {
     setIsEditModalOpen(false);
     // console.log(selectedParent);
     const payload = {
       id,
       parent_id: selectedParent?.templateId?._id,
-      child_id: editingChemicalForm.chemicalId,
+      child_id: data.chemicalId,
       payload: {
-        ratio: editingChemicalForm.ratio,
-        ratioUnit: editingChemicalForm.ratioUnit,
+        ratio: data.ratio,
+        ratioUnit: data.ratioUnit,
       },
     };
     const response = await dispatch(updateChildChemicalWhileUpdate(payload));
@@ -193,37 +181,7 @@ const EditRecipe = () => {
     }
   };
 
-  const handleUpdateParentChemical = async (e) => {
-    e.preventDefault();
-    setIsEditModalOpen(false);
-
-    const payload = {
-      id,
-      parent_id: editingChemicalForm.chemicalId,
-      payload: {
-        ratio: editingChemicalForm.ratio,
-        ratioUnit: editingChemicalForm.ratioUnit,
-      },
-    };
-    const response = await dispatch(updateParentChemicalWhileUpdate(payload));
-
-    await dispatch(getReceipe(id));
-    if (response.error) {
-      Swal.fire({
-        icon: "error",
-        text: response?.payload?.message || "Failed to update parent chemical",
-      });
-    } else {
-      Swal.fire({
-        icon: "success",
-        text:
-          response?.payload?.message || "Parent chemical updated successfully",
-      });
-    }
-  };
-
   const handleDeleteParentChemical = async (parent) => {
-  
     const payload = {
       id,
       parent_id: parent.templateId._id,
@@ -281,153 +239,6 @@ const EditRecipe = () => {
     }
   };
 
-  // Shade ---------------------------------------------------------------
-  const [searchQueries, setSearchQueries] = useState({
-    shade: "",
-    quality: "",
-    customer: "",
-  });
-  const [selectedIds, setSelectedIds] = useState({
-    shade: null,
-    quality: null,
-    customer: null,
-  });
-  const [pageSizes, setPageSizes] = useState({
-    shade: 5,
-    quality: 5,
-    customer: 5,
-  });
-
-  const debouncedSearchQueries = {
-    shade: useDebounce(searchQueries.shade, 300),
-    quality: useDebounce(searchQueries.quality, 300),
-    customer: useDebounce(searchQueries.customer, 300),
-  };
-
-  // Fetch shades , Qualities & customer -------------------------------------------------------------
-  const { allShade, loading: shadeLoading } = useSelector(
-    (state) => state.shade
-  );
-
-  const { allQualities, loading: qualityLoading } = useSelector(
-    (state) => state.quality
-  );
-
-  const { allCustomers, loading: customerLoading } = useSelector(
-    (state) => state.customer
-  );
-
-  useEffect(() => {
-    if (!receipe) return;
-
-    const fetchData = async (apiCall, key) => {
-      const response = await apiCall();
-      if (response.payload.data.results.length > 0) {
-        const result = response.payload.data.results[0];
-        setSelectedIds((prev) => ({
-          ...prev,
-          [key]: result,
-        }));
-        setValue(key + "Id", result._id, { shouldValidate: true });
-      }
-    };
-
-    receipe.shadeId &&
-      fetchData(
-        () => dispatch(searchShade({ shadeCode: receipe.shadeId.shadeCode })),
-        "shade"
-      );
-    receipe.qualityId &&
-      fetchData(
-        () =>
-          dispatch(
-            searchQuality({ qualityCode: receipe.qualityId.qualityCode })
-          ),
-        "quality"
-      );
-    receipe.customerId &&
-      fetchData(
-        () => dispatch(searchCustomer({ name: receipe.customerId.name })),
-        "customer"
-      );
-  }, [receipe, dispatch]);
-
-  const fetchSearchResults = (searchKey, query, searchFunction, pageSize) => {
-    if (query.length > 0) {
-      dispatch(searchFunction({ [searchKey]: query, pageSize }));
-    } else if(!selectedIds.shade || !selectedIds.quality || !selectedIds.customer) {
-      dispatch(searchFunction({ pageSize }));
-    }
-  };
-
-  useEffect(() => {
-    fetchSearchResults(
-      "shadeCode",
-      debouncedSearchQueries.shade,
-      searchShade,
-      pageSizes.shade
-    );
-  }, [debouncedSearchQueries.shade, dispatch, pageSizes.shade]);
-
-  useEffect(() => {
-    fetchSearchResults(
-      "qualityCode",
-      debouncedSearchQueries.quality,
-      searchQuality,
-      pageSizes.quality
-    );
-  }, [debouncedSearchQueries.quality, dispatch, pageSizes.quality]);
-
-  useEffect(() => {
-    fetchSearchResults(
-      "name",
-      debouncedSearchQueries.customer,
-      searchCustomer,
-      pageSizes.customer
-    );
-  }, [debouncedSearchQueries.customer, dispatch, pageSizes.customer]);
-
-  // ----------------------------------------------------------------------------------
-
-  // Common function for handling scroll and loading more items
-  const handleListEnd = (searchType) => {
-    setPageSizes((prevSizes) => ({
-      ...prevSizes,
-      [searchType]: prevSizes[searchType] + 5,
-    }));
-  };
-
-  const handleInputChange = (type) => (event, newInputValue) => {
-    // Only update the searchQueries if the input value is being typed (not when an option is selected)
-    if (event?.type === "change") {
-      setSearchQueries((prev) => ({ ...prev, [type]: newInputValue }));
-    }
-
-    // Mapping of search types to their respective actions
-    const searchActions = {
-      shade: () => dispatch(searchShade({ pageSize: pageSizes.shade })),
-      quality: () => dispatch(searchQuality({ pageSize: pageSizes.quality })),
-      customer: () =>
-        dispatch(searchCustomer({ pageSize: pageSizes.customer })),
-    };
-
-    // Call the corresponding action when input is cleared (empty string)
-    if (newInputValue === "" && searchActions[type]) {
-      setSearchQueries((prev) => ({ ...prev, [type]: "" }));
-      searchActions[type](); // Trigger default list API
-    }
-  };
-
-  // Common function for handling selection change
-  const handleSelectionChange = (type) => (event, newValue) => {
-    setSelectedIds((prev) => ({ ...prev, [type]: newValue }));
-    if (newValue) {
-      setValue(type + "Id", newValue._id, { shouldValidate: true });
-    } else {
-      setValue(type + "Id", "", { shouldValidate: true });
-    }
-  };
-
   const {
     handleSubmit,
     setValue,
@@ -450,10 +261,12 @@ const EditRecipe = () => {
     if (receipe) {
       reset({
         recipeType: receipe.recipeType || "",
+        shadeId: receipe.shadeId._id || "",
+        qualityId: receipe.qualityId._id || "",
+        customerId: receipe.customerId._id || "",
       });
     }
   }, [receipe, reset]);
-
 
   const handleTemplateChange = async (selectedTemplate) => {
     const response = await dispatch(fetchTemplateById(selectedTemplate));
@@ -503,12 +316,12 @@ const EditRecipe = () => {
   const onSubmit = async (data) => {
     // console.log(data)
     const payload = {
-      id,
-      payload: {
-        ...data,
-      },
+      ...data,
+      shadeId: data.shadeId,
+      qualityId: data.qualityId,
+      customerId: data.customerId,
     };
-    const response = await dispatch(updateReceipe(payload));
+    const response = await dispatch(updateReceipe({ id, payload }));
     if (response.error) {
       Swal.fire({
         icon: "error",
@@ -537,53 +350,39 @@ const EditRecipe = () => {
               <label className="formLabel mb-2">
                 Shade <span className="startColor">*</span>
               </label>
-              <Controller
-                name="shadeId"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    options={allShade}
-                    getOptionLabel={(option) =>
-                      `${option.shadeCode} - ${option.color}` || ""
-                    }
-                    onInputChange={handleInputChange("shade")}
-                    isOptionEqualToValue={(option, value) =>
-                      option._id === value?._id
-                    }
-                    value={selectedIds.shade}
-                    noOptionsText="Type Something to view the results"
-                    onChange={handleSelectionChange("shade")}
-                    ListboxComponent={(props) => (
-                      <Listbox
-                        {...props}
-                        onListEnd={() => handleListEnd("shade")}
-                      />
-                    )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Shade"
-                        variant="outlined"
-                        fullWidth
-                        error={!!errors.shadeId}
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: (
-                            <>
-                              {shadeLoading && <CircularProgress size={20} />}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
-              {errors.shadeId && (
-                <FormHelperText error>{errors.shadeId.message}</FormHelperText>
-              )}
+              <FormControl fullWidth className="formInput">
+                <Controller
+                  name="shadeId"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableAutocomplete
+                      {...field}
+                      control={control}
+                      fieldName="shadeId"
+                      getOptionLabel={(option) =>
+                        `${option.shadeCode} - ${option.color}` || ""
+                      }
+                      dispatch={dispatch}
+                      searchAction={searchShade}
+                      options={allShade}
+                      valueResolver={() =>
+                        // Logic to resolve the initial value
+                        allShade?.find((sh) => sh._id === watch("shadeId")) ||
+                        (watch("shadeId")
+                          ? {
+                              _id: receipe.shadeId._id,
+                              shadeCode: receipe.shadeId.shadeCode,
+                              color: receipe.shadeId.color,
+                            }
+                          : null)
+                      }
+                      setValue={setValue}
+                      errors={errors}
+                      label="Select Shade"
+                    />
+                  )}
+                />
+              </FormControl>
               <div className="d-flex justify-content-end w-100 mt-3">
                 <Button
                   variant="contained"
@@ -600,55 +399,43 @@ const EditRecipe = () => {
               <label className="formLabel mb-2">
                 Quality Code <span className="startColor">*</span>
               </label>
-              <Controller
-                name="qualityId"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    options={allQualities}
-                    getOptionLabel={(option) =>
-                      `${option.qualityCode} - ${option.qualityCodeManual}` ||
-                      ""
-                    }
-                    onInputChange={handleInputChange("quality")}
-                    isOptionEqualToValue={(option, value) =>
-                      option._id === value?._id
-                    }
-                    value={selectedIds.quality}
-                    onChange={handleSelectionChange("quality")}
-                    ListboxComponent={(props) => (
-                      <Listbox
-                        {...props}
-                        onListEnd={() => handleListEnd("quality")}
-                      />
-                    )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Select Quality Code"
-                        variant="outlined"
-                        fullWidth
-                        error={!!errors.qualityId}
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: (
-                            <>
-                              {qualityLoading && <CircularProgress size={20} />}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
-              {errors.qualityId && (
-                <FormHelperText error>
-                  {errors.qualityId.message}
-                </FormHelperText>
-              )}
+              <FormControl fullWidth className="formInput">
+                <Controller
+                  name="qualityId"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableAutocomplete
+                      {...field}
+                      control={control}
+                      fieldName="qualityId"
+                      getOptionLabel={(option) =>
+                        `${option.qualityCode} - ${option.qualityCodeManual}` ||
+                        ""
+                      }
+                      dispatch={dispatch}
+                      searchAction={searchQuality}
+                      options={allQualities}
+                      valueResolver={() =>
+                        // Logic to resolve the initial value
+                        allQualities?.find(
+                          (quality) => quality._id === watch("qualityId")
+                        ) ||
+                        (watch("qualityId")
+                          ? {
+                              _id: receipe.qualityId._id,
+                              qualityCode: receipe.qualityId.qualityCode,
+                              qualityCodeManual:
+                                receipe.qualityId.qualityCodeManual,
+                            }
+                          : null)
+                      }
+                      setValue={setValue}
+                      errors={errors}
+                      label="Select Quality"
+                    />
+                  )}
+                />
+              </FormControl>
               <div className="d-flex justify-content-end w-100 mt-3">
                 <Button
                   disabled={user.role.key === USER}
@@ -672,57 +459,41 @@ const EditRecipe = () => {
               <label className="formLabel mb-2">
                 Customer <span className="startColor">*</span>
               </label>
-              <Controller
-                name="customerId"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    options={allCustomers}
-                    getOptionLabel={(option) =>
-                      `${option.name} - ${option.custCode}` || ""
-                    }
-                    onInputChange={handleInputChange("customer")}
-                    isOptionEqualToValue={(option, value) =>
-                      option._id === value?._id
-                    }
-                    value={selectedIds.customer}
-                    onChange={handleSelectionChange("customer")}
-                    loading={customerLoading}
-                    ListboxComponent={(props) => (
-                      <Listbox
-                        {...props}
-                        onListEnd={() => handleListEnd("customer")}
-                      />
-                    )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label="Customer"
-                        variant="outlined"
-                        fullWidth
-                        error={!!errors.customerId}
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: (
-                            <>
-                              {customerLoading ? (
-                                <CircularProgress size={20} />
-                              ) : null}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        }}
-                      />
-                    )}
-                  />
-                )}
-              />
-              {errors.customerId && (
-                <FormHelperText error>
-                  {errors.customerId.message}
-                </FormHelperText>
-              )}
+              <FormControl fullWidth className="formInput">
+                <Controller
+                  name="customerId"
+                  control={control}
+                  render={({ field }) => (
+                    <SearchableAutocomplete
+                      {...field}
+                      control={control}
+                      fieldName="customerId"
+                      getOptionLabel={(option) =>
+                        `${option.name} - ${option.custCode}` || ""
+                      }
+                      dispatch={dispatch}
+                      searchAction={searchCustomer}
+                      options={allCustomers}
+                      valueResolver={() =>
+                        // Logic to resolve the initial value
+                        allCustomers?.find(
+                          (cust) => cust._id === watch("customerId")
+                        ) ||
+                        (watch("customerId")
+                          ? {
+                              _id: receipe.customerId._id,
+                              name: receipe.customerId.name,
+                              custCode: receipe.customerId.custCode,
+                            }
+                          : null)
+                      }
+                      setValue={setValue}
+                      errors={errors}
+                      label="Select Customer"
+                    />
+                  )}
+                />
+              </FormControl>
               <div className="d-flex justify-content-end w-100 mt-3">
                 <Button
                   disabled={user.role.key === USER}
@@ -738,35 +509,37 @@ const EditRecipe = () => {
               <label className="formLabel mb-2">
                 Recipe Type <span className="startColor">*</span>
               </label>
-              <Controller
-                name="recipeType"
-                control={control}
-                defaultValue=""
-                render={({ field }) => (
-                  <FormControl fullWidth>
-                    <InputLabel id="recipeTypeLabel">
-                      Select Recipe Type
-                    </InputLabel>
-                    <Select
-                      {...field}
-                      labelId="recipeTypeLabel"
-                      label="Select Recipe Type"
-                      error={!!errors.recipeType}
-                    >
-                      {recipeTypes.map((type, index) => (
-                        <MenuItem key={index} value={type}>
-                          {type}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.recipeType && (
-                      <FormHelperText error>
-                        {errors.recipeType.message}
-                      </FormHelperText>
-                    )}
-                  </FormControl>
-                )}
-              />
+              <FormControl fullWidth className="formInput">
+                <Controller
+                  name="recipeType"
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel id="recipeTypeLabel">
+                        Select Recipe Type
+                      </InputLabel>
+                      <Select
+                        {...field}
+                        labelId="recipeTypeLabel"
+                        label="Select Recipe Type"
+                        error={!!errors.recipeType}
+                      >
+                        {recipeTypes.map((type, index) => (
+                          <MenuItem key={index} value={type}>
+                            {type}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors.recipeType && (
+                        <FormHelperText error>
+                          {errors.recipeType.message}
+                        </FormHelperText>
+                      )}
+                    </FormControl>
+                  )}
+                />
+              </FormControl>
             </Grid>
             <Grid item xs={12}>
               <Button
@@ -811,6 +584,13 @@ const EditRecipe = () => {
                       field.onChange(e.target.value);
                       handleTemplateChange(e.target.value);
                     }}
+                    MenuProps={{
+                      PaperProps: {
+                        style: {
+                          maxHeight: 200,
+                        },
+                      },
+                    }}
                   >
                     {templates.map((template) => (
                       <MenuItem key={template._id} value={template._id}>
@@ -845,162 +625,31 @@ const EditRecipe = () => {
           />
         </Grid>
       </Box>
-      {/* add child modal Start */}
-      <Modal open={modelOpen} onClose={toggleModal}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            borderRadius: "12px",
-            boxShadow: 24,
-            p: 4,
-          }}
-        >
-          <form onSubmit={handleAddChildSubmit}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel id="chemical-name-label">Chemical</InputLabel>
-                  <Select
-                    name="chemicalId"
-                    value={chemicalForm?.chemicalId}
-                    onChange={handleChemicalFormChange}
-                    label="Chemical"
-                    labelId="chemical-name-label"
-                  >
-                    {allChemicals?.map((ele) => (
-                      <MenuItem key={ele._id} value={ele._id}>
-                        {ele?.name} - {ele?.materialCode}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  name="ratio"
-                  label="Ratio"
-                  type="number"
-                  value={chemicalForm.ratio}
-                  onChange={handleChemicalFormChange}
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel id="ratio-unit-label">Ratio Unit</InputLabel>
-                  <Select
-                    name="ratioUnit"
-                    value={chemicalForm.ratioUnit}
-                    onChange={handleChemicalFormChange}
-                    label="Ratio Unit"
-                    labelId="ratio-unit-label"
-                  >
-                    {ratioUnits?.map((unit) => (
-                      <MenuItem key={unit} value={unit}>
-                        {unit}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12}>
-                <Button variant="contained" color="primary" type="submit">
-                  Add
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={() => setModelOpen(false)}
-                  style={{ marginLeft: "10px" }}
-                >
-                  Cancel
-                </Button>
-              </Grid>
-            </Grid>
-          </form>
-        </Box>
-      </Modal>
-      {/* add child modal close */}
+      {/* =============== add child modal Start ======================== */}
 
-      <Modal
+      <ChemicalModal
+        open={modelOpen}
+        onClose={toggleModal}
+        onSubmit={handleAddChildSubmit}
+        chemicalForm={chemicalForm}
+        handleChemicalFormChange={chemicalForm.setValue}
+        allChemicals={allChemicals}
+        ratioUnits={ratioUnits}
+        mode={`add`}
+      />
+      {/* ========== add child modal close ======================= */}
+
+      <ChemicalModal
         open={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        aria-labelledby="edit-parent-chemical-modal"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            bgcolor: "background.paper",
-            borderRadius: "12px",
-            boxShadow: 24,
-            p: 4,
-          }}
-        >
-          <Typography variant="h6" component="h2">
-            {isEditingChild ? "Edit Child Chemical" : "Edit Parent Chemical"}
-          </Typography>
-          <form
-            onSubmit={
-              isEditingChild
-                ? handleUpdateChildChemical
-                : handleUpdateParentChemical
-            }
-          >
-            <FormControl fullWidth margin="normal">
-              <InputLabel id="chemical-name-label">Chemical </InputLabel>
-              <Select
-                name="chemicalId"
-                value={editingChemicalForm.chemicalId}
-                label="Chemical"
-                labelId="chemical-name-label"
-                onChange={handleEditChemicalFormChange}
-                disabled
-              >
-                {allChemicals.map((chemical) => (
-                  <MenuItem key={chemical._id} value={chemical._id}>
-                    {chemical.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              fullWidth
-              margin="normal"
-              label="Ratio"
-              name="ratio"
-              value={editingChemicalForm.ratio}
-              onChange={handleEditChemicalFormChange}
-            />
-            <FormControl fullWidth margin="normal">
-              <InputLabel id="ratio-unit-label">Ratio Unit</InputLabel>
-              <Select
-                name="ratioUnit"
-                value={editingChemicalForm.ratioUnit}
-                label="Ratio Unit"
-                labelId="ratio-unit-label"
-                onChange={handleEditChemicalFormChange}
-              >
-                {ratioUnits?.map((unit) => (
-                  <MenuItem key={unit} value={unit}>
-                    {unit}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button type="submit" variant="contained" color="primary">
-              Save Changes
-            </Button>
-          </form>
-        </Box>
-      </Modal>
+        onSubmit={handleUpdateChildChemical}
+        chemicalForm={chemicalForm}
+        handleChemicalFormChange={chemicalForm.setValue}
+        allChemicals={allChemicals}
+        disabled={true}
+        ratioUnits={ratioUnits}
+        mode={`edit`}
+      />
     </section>
   );
 };

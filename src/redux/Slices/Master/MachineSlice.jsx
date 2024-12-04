@@ -13,7 +13,7 @@ const initialState = {
   totalResults: 0,
   hasNextPage: null,
   hasPrevPage: null,
-  pageSize: 5,
+  pageSize: 10,
 };
 
 // fetch Machine
@@ -22,8 +22,9 @@ export const fetchMachine = createAsyncThunk(
   async ({ pageSize, page }, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(
-        `/machine/?pageSize=${pageSize}&page=${page}`
-      );
+        `/machine`, {
+          params: { pageSize, page }  
+      });
       return response?.data;
     } catch (error) {
       const errorPayload = generateErrorPayload(error);
@@ -80,6 +81,25 @@ export const getMachineById = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get(`/machine/${id}`);
+      return response.data;
+    } catch (error) {
+      const errorPayload = generateErrorPayload(error);
+      return rejectWithValue(errorPayload);
+    }
+  }
+);
+
+// search machine for Execution
+export const searchMacineForExecution = createAsyncThunk(
+  "machine/searchMacine",
+  async ({ pageSize = 10, name }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get(`/schedule/search/machine`, {
+        params: {
+          q: name,
+          pageSize,
+        },
+      });
       return response.data;
     } catch (error) {
       const errorPayload = generateErrorPayload(error);
@@ -169,6 +189,20 @@ const machineSlice = createSlice({
         state.machine = action.payload.data;
       })
       .addCase(getMachineById.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // get machine
+      .addCase(searchMacineForExecution.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(searchMacineForExecution.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        state.allMachine = action.payload.data.results;
+      })
+      .addCase(searchMacineForExecution.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

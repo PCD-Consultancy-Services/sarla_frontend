@@ -15,15 +15,15 @@ import {
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchChemicalsUnits } from "../../redux/Slices/Master/ChemicalUnitsSlice";
-import { fetchTanks } from "../../redux/Slices/Master/TankSlice";
-import { fetchClassification } from "../../redux/Slices/Master/ClassificationSlice";
+import { fetchTanks, searchTank } from "../../redux/Slices/Master/TankSlice";
+import {
+  fetchClassification,
+  searchClassification,
+} from "../../redux/Slices/Master/ClassificationSlice";
+import SearchableAutocomplete from "../SearchableAutoComplete";
+import Loader from "../Loader";
 
-const ChemicalForm = ({
-  onSubmit,
-  initialData = {},
-  loading,
-  onCancel,
-}) => {
+const ChemicalForm = ({ onSubmit, initialData = {}, loading, onCancel }) => {
   const dispatch = useDispatch();
 
   const {
@@ -52,6 +52,7 @@ const ChemicalForm = ({
     handleSubmit,
     watch,
     control,
+    setValue,
     reset,
     formState: { errors },
   } = useForm({
@@ -93,8 +94,8 @@ const ChemicalForm = ({
       reset({
         name: initialData.name || "",
         materialCode: initialData.materialCode || "",
-        classifId: initialData.classifId || "",
-        tankId: initialData.tankId || "",
+        classifId: initialData.classifId._id || "",
+        tankId: initialData.tankId._id || "",
         fluidState: initialData.fluidState || "",
         minConsumption: initialData.minConsumption || "",
         maxConsumption: initialData.maxConsumption || "",
@@ -108,10 +109,36 @@ const ChemicalForm = ({
         viscosity: initialData.viscosity || "",
         viscosityUnit: initialData.viscosityUnit || "",
       });
+    } else {
+      reset({
+        name: "",
+        materialCode: "",
+        classifId: "",
+        tankId: "",
+        fluidState: "",
+        minConsumption: "",
+        maxConsumption: "",
+        consumptionUnit: "",
+        ph: "",
+        phUnit: "",
+        density: "",
+        densityUnit: "",
+        conductivity: "",
+        conductivityUnit: "",
+        viscosity: "",
+        viscosityUnit: "",
+      });
     }
   }, [initialData, reset]);
 
-  // console.log(initialData, "inital values");
+  if (loading) {
+    return (
+      <div className="loader-div">
+        <Loader />
+      </div>
+    );
+  }
+
   return (
     <FormLayout
       onSubmit={handleSubmit(onSubmit)}
@@ -168,33 +195,37 @@ const ChemicalForm = ({
             Classification Name <span className="startColor">*</span>
           </label>
           <FormControl fullWidth className="formInput">
-            <InputLabel id="classification-select-label">
-              Select Classification Name
-            </InputLabel>
             <Controller
               name="classifId"
               control={control}
               render={({ field }) => (
-                <Select
+                <SearchableAutocomplete
                   {...field}
-                  error={!!errors?.classifId}
-                  label="Select Classification Name"
-                  labelId="classification-select-label"
-                  InputProps={{
-                    endAdornment: loading && <CircularProgress size={20} />,
-                  }}
-                >
-                  {allClassification?.map((data) => (
-                    <MenuItem key={data._id} value={data._id}>
-                      {data.name}
-                    </MenuItem>
-                  ))}
-                </Select>
+                  control={control}
+                  fieldName="classifId"
+                  dispatch={dispatch}
+                  searchAction={searchClassification}
+                  options={allClassification}
+                  loading={loading}
+                  valueResolver={() =>
+                    // Logic to resolve the initial value
+                    allClassification?.find(
+                      (classification) => classification._id === watch("classifId")
+                    ) ||
+                    (watch("classifId")
+                      ? {
+                          _id: watch("classifId"),
+                          name:
+                            initialData?.classifId?.name || "Original classi",
+                        }
+                      : null)
+                  }
+                  setValue={setValue}
+                  errors={errors}
+                  label="Select Classification"
+                />
               )}
             />
-            {errors.classifId && (
-              <FormHelperText error>{errors.classifId?.message}</FormHelperText>
-            )}
           </FormControl>
         </Grid>
 
@@ -203,29 +234,35 @@ const ChemicalForm = ({
             Tank Name <span className="startColor">*</span>
           </label>
           <FormControl fullWidth className="formInput">
-            <InputLabel id="tank-select-label">Select Tank Name</InputLabel>
-            <Controller
-              name="tankId"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  {...field}
-                  error={!!errors.tankId}
-                  label="Select Tank Name"
-                  labelId="tank-select-label"
-                  InputProps={{
-                    endAdornment: loading && <CircularProgress size={20} />,
-                  }}
-                >
-                  {allTanks?.map((data) => (
-                    <MenuItem key={data._id} value={data._id}>
-                      {data.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-          </FormControl>
+        <Controller
+            name="tankId"
+            control={control}
+            render={({ field }) => (
+              <SearchableAutocomplete
+                {...field}
+                control={control}
+                fieldName="tankId"
+                dispatch={dispatch}
+                searchAction={searchTank}
+                options={allTanks}
+                loading={loading}
+                valueResolver={() =>
+                  // Logic to resolve the initial value
+                  allTanks?.find((service) => service._id === watch("tankId")) ||
+                  (watch("tankId")
+                    ? {
+                        _id: watch("tankId"),
+                        name: initialData?.tankId?.name || "Original tank",
+                      }
+                    : null)
+                }
+                setValue={setValue}
+                errors={errors}
+                label="Select Tank"
+              />
+            )}
+          />
+        </FormControl>
         </Grid>
 
         <Grid item xs={6}>

@@ -142,7 +142,7 @@ export const SidebarData = [
         subNav: [
           {
             title: ViewAll,
-            path: `${URL.viewCustomer}`,
+            path: `${URL.viewAllCustomer}`,
           },
           {
             title: AddNew,

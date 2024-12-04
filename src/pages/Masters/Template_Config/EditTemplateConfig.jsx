@@ -22,12 +22,14 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   FormHelperText,
-  Snackbar,
+  CircularProgress,
 } from "@mui/material";
 import { fetchChemicalsUnits } from "../../../redux/Slices/Master/ChemicalUnitsSlice";
-import { fetchChemicals } from "../../../redux/Slices/Master/ChemicalSlice";
+import {
+  fetchChemicals,
+  searchChemicalForTemplate,
+} from "../../../redux/Slices/Master/ChemicalSlice";
 import {
   getMasterTemplateById,
   updateMasterTemplate,
@@ -35,26 +37,39 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import URL from "../../../routes/URLs";
+import { textState } from "../../../redux/Slices/Theme/themeSetting";
+import headerURL from "../../headerURL";
+import GridLayout from "../../../layout/GridLayout";
+import SearchableAutocomplete from "../../../components/SearchableAutoComplete";
 
 const EditTemplateConfig = () => {
   const condition = useSelector((state) => state.theme.checkCondition);
   const sectionClass = condition.isOpen ? "page-padding" : "normal-padding";
 
-  const { allChemicals } = useSelector((state) => state.chemical);
+  const { allChemicals, loading: chemicalLoading } = useSelector(
+    (state) => state.chemical
+  );
   const { ratioUnits } = useSelector((state) => state.chemicalUnits);
-  const { masterTemplate } = useSelector((state) => state.masterTemplate);
-  // console.log(allChemicals?.materialCode[1] , "allChemicals")
+  const { masterTemplate, loading } = useSelector(
+    (state) => state.masterTemplate
+  );
 
   const [data, setData] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  // const [snackbarMessage, setSnackbarMessage] = useState("");
-  // const [snackbarSeverity, setSnackbarSeverity] = useState("success");
-  const [templateName, setTemplateName] = useState("");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { id } = useParams();
+
+
+  useEffect(() => {
+    dispatch(
+      textState({
+        text: headerURL.editTemplateConfig.text,
+        path: headerURL.editTemplateConfig.path,
+      })
+    );
+  }, [dispatch]);
 
   // Form for updating template name
   const {
@@ -75,6 +90,7 @@ const EditTemplateConfig = () => {
     control,
     formState: { errors },
     setValue: setValueChemical,
+    watch,
     reset: resetChemical,
   } = useForm({
     defaultValues: {
@@ -85,8 +101,12 @@ const EditTemplateConfig = () => {
     resolver: yupResolver(templateConfigAddSchema),
   });
 
+  console.log(data, "datatatat");
+
   // Main form submission handler for chemicals
   const onSubmitChemical = (formData) => {
+    console.log(formData, ";;;");
+
     const isDuplicate = data.some(
       (item, index) =>
         item.ChemicalName === formData.ChemicalName && index !== editIndex
@@ -119,11 +139,8 @@ const EditTemplateConfig = () => {
       setData([...data, newEntry]);
     }
 
-    resetChemical({
-      ChemicalName: "",
-      RatioName: "",
-      RatioUnit: "",
-    });
+    resetChemical();
+    setValueChemical("ChemicalName", null);
   };
 
   // Template name submission handler
@@ -172,7 +189,6 @@ const EditTemplateConfig = () => {
 
   useEffect(() => {
     if (masterTemplate) {
-      setTemplateName(masterTemplate?.name);
       setValueTemplate("templateName", masterTemplate?.name);
 
       const formattedData = masterTemplate?.chemicals?.map((chem) => ({
@@ -185,12 +201,9 @@ const EditTemplateConfig = () => {
     }
   }, [masterTemplate, setValueTemplate]);
 
-  const handleSnackbarClose = () => {
-    setOpenSnackbar(false);
-  };
-
   const handleEdit = (index) => {
     const item = data[index];
+
     setValueChemical("RatioName", item?.RatioName);
     setValueChemical("RatioUnit", item?.RatioUnit);
     setValueChemical("ChemicalName", item?.ChemicalName);
@@ -204,18 +217,17 @@ const EditTemplateConfig = () => {
     setData(updatedData);
   };
 
+  console.log(errors, "yup errors");
   return (
-    <section className={`sky-bg h-auto addCustomerSection ${sectionClass}`}>
+    <section
+      className={`sky-bg ${
+        data?.length > 4 ? "h-auto" : "vh-100"
+      }  ${sectionClass}`}
+    >
       <Box padding={5}>
         {/* Template Name Form */}
         <form onSubmit={handleSubmitTemplate(onSubmitTemplate)}>
-          <Grid
-            container
-            spacing={2}
-            bgcolor={"white"}
-            borderRadius={"15px"}
-            padding={"20px"}
-          >
+          <GridLayout>
             <Grid item xs={6} md={6} sm={6}>
               <label className="formLabel mb-3">
                 Template Name <span className="startColor">*</span>
@@ -242,50 +254,44 @@ const EditTemplateConfig = () => {
                 Cancel
               </Button>
             </Grid>
-          </Grid>
+          </GridLayout>
         </form>
 
         {/* Main Form for Chemicals */}
         <form onSubmit={handleSubmitChemical(onSubmitChemical)}>
-          <Grid
-            container
-            spacing={2}
-            bgcolor={"white"}
-            borderRadius={"15px"}
-            padding={"20px"}
-            marginTop={3}
-          >
+          <GridLayout className={`mt-5`}>
             <Grid item xs={4} md={4} sm={12}>
               <label className="formLabel mb-3">
                 Chemical Name <span className="startColor">*</span>
               </label>
               <FormControl fullWidth>
-                <InputLabel id="chemical-name-label">Chemical Name</InputLabel>
                 <Controller
                   name="ChemicalName"
                   control={control}
-                  defaultValue=""
                   render={({ field }) => (
-                    <Select
+                    <SearchableAutocomplete
                       {...field}
-                      error={!!errors.ChemicalName}
+                      control={control}
+                      fieldName="ChemicalName"
+                      dispatch={dispatch}
+                      searchAction={searchChemicalForTemplate}
+                      options={allChemicals}
+                      valueResolver={() =>
+                        // Logic to resolve the initial value
+                        allChemicals?.find((ch) => ch._id === watch("ChemicalName")) ||
+                        (watch("ChemicalName")
+                          ? {
+                              _id: watch("ChemicalName"),
+                              name: data[editIndex]?.ChemicalDisplayName || "Original Service",
+                            }
+                          : null)
+                      }
+                      setValue={setValueChemical}
+                      errors={errors}
                       label="Select Chemical Name"
-                      labelId="chemical-name-label"
-                      id="chemical-name-select"
-                    >
-                      {allChemicals?.map((ele) => (
-                        <MenuItem key={ele._id} value={ele._id}>
-                          {ele?.name} - {ele?.materialCode}
-                        </MenuItem>
-                      ))}
-                    </Select>
+                    />
                   )}
                 />
-                {errors.ChemicalName && (
-                  <FormHelperText>
-                    {errors.ChemicalName?.message}
-                  </FormHelperText>
-                )}
               </FormControl>
             </Grid>
             <Grid item xs={4} md={4} sm={12}>
@@ -339,12 +345,14 @@ const EditTemplateConfig = () => {
                 {editIndex !== null ? "Update" : "Add"}
               </Button>
             </Grid>
-          </Grid>
+          </GridLayout>
         </form>
 
         {/* Data Table */}
-        <Box marginTop={3}>
-          <TableContainer component={Paper} sx={{ overflowX: "auto" }}>
+
+        {/* Data Table */}
+        <GridLayout>
+          <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
@@ -358,14 +366,19 @@ const EditTemplateConfig = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.length > 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} align="center">
+                      <CircularProgress />
+                    </TableCell>
+                  </TableRow>
+                ) : data?.length > 0 ? (
                   data.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{item.ChemicalDisplayName}</TableCell>
                       <TableCell>{item.RatioName}</TableCell>
                       <TableCell>{item.RatioUnit}</TableCell>
-
                       <TableCell>
                         <Button
                           onClick={() => handleEdit(index)}
@@ -394,7 +407,7 @@ const EditTemplateConfig = () => {
               </TableBody>
             </Table>
           </TableContainer>
-        </Box>
+        </GridLayout>
       </Box>
     </section>
   );
